@@ -1,0 +1,3549 @@
+<!DOCTYPE html>
+<html lang="id">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>DIGISURAT SDN Balungbang Jaya 1</title>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <script src="https://cdn.tailwindcss.com/3.1.8"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.1/jspdf.umd.min.js"></script>
+
+        <style>
+            /* Gaya tambahan untuk tombol aksi */
+            .btn-aksi {
+                @apply px-4 py-2 rounded-md font-semibold text-sm;
+            }
+            .btn-primary {
+                @apply bg-blue-500 hover:bg-blue-700 text-white;
+            }
+            .btn-secondary {
+                @apply bg-gray-300 hover:bg-gray-400 text-gray-800;
+            }
+            .btn-success {
+                @apply bg-green-500 hover:bg-green-700 text-white;
+            }
+            .btn-warning {
+                @apply bg-yellow-500 hover:bg-yellow-700 text-white;
+            }
+            .btn-danger {
+                @apply bg-red-500 hover:bg-red-700 text-white;
+            }
+            .btn-info {
+                @apply bg-teal-500 hover:bg-teal-700 text-white;
+            }
+
+            /* Gaya untuk modal */
+            .modal {
+                display: none; /* Hidden by default */
+                position: fixed; /* Stay in place */
+                z-index: 1000; /* Sit on top */
+                left: 0;
+                top: 0;
+                width: 100%; /* Full width */
+                height: 100%; /* Full height */
+                overflow: auto; /* Enable scroll if needed */
+                background-color: rgba(0, 0, 0, 0.5); /* Black with opacity */
+            }
+
+            .modal-content {
+                background-color: #fefefe;
+                margin: 10% auto; /* 15% from the top and centered */
+                padding: 20px;
+                border: 1px solid #888;
+                width: 90%; /* Could be more or less, depending on screen size */
+                max-width: 800px; /* Maximum width */
+                border-radius: 0.5rem;
+                position: relative;
+            }
+
+            .modal-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 1px solid #e5e7eb;
+            }
+
+            .modal-header h2 {
+                font-size: 1.5rem;
+                font-weight: 600;
+                color: #1f2937;
+                margin: 0;
+            }
+
+            .close-button {
+                color: #aaa;
+                float: right;
+                font-size: 2rem;
+                font-weight: bold;
+                position: absolute;
+                top: 0.5rem;
+                right: 0.5rem;
+                cursor: pointer;
+            }
+
+            .close-button:hover,
+            .close-button:focus {
+                color: #000;
+                text-decoration: none;
+            }
+
+            .modal-body {
+                padding: 0.5rem 0;
+            }
+
+            .modal-footer {
+                margin-top: 1rem;
+                padding-top: 0.5rem;
+                border-top: 1px solid #e5e7eb;
+                display: flex;
+                justify-content: flex-end;
+            }
+
+            .modal-footer .btn {
+                margin-left: 0.5rem;
+            }
+
+            /* Tambahan gaya untuk input file */
+            input[type="file"] {
+                opacity: 0;
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                cursor: pointer;
+            }
+
+            .file-upload-wrapper {
+                position: relative;
+                display: inline-flex; /* Use inline-flex for better alignment */
+                align-items: center;
+                background-color: #fff;
+                border: 2px dashed #cbd5e0; /* Dotted border */
+                border-radius: 0.5rem;
+                padding: 0.5rem;
+                text-align: center;
+                cursor: pointer;
+                transition: border-color 0.3s ease; /* Smooth transition */
+                width: fit-content; /* Adjust width to content */
+            }
+
+            .file-upload-wrapper:hover {
+                border-color: #6b7280; /* Change border color on hover */
+            }
+
+            .file-upload-text {
+                font-size: 0.875rem;
+                color: #4b5563;
+                margin-right: 0.5rem; /* Add some margin for spacing */
+            }
+
+            .file-upload-button {
+                @apply bg-blue-500 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm font-semibold;
+            }
+
+            .file-upload-input-wrapper {
+                position: relative;
+                width: 100%;
+            }
+
+            /* Gaya untuk preview surat */
+            #letter-preview {
+                background-color: white !important;
+                padding: 1.5rem;
+                border-radius: 0.5rem;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+                    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                min-height: 400px;
+                white-space: pre-wrap; /* Preserve whitespace and allow wrapping */
+                font-family: "Times New Roman", serif; /* Typical letter font */
+                line-height: 1.6;
+                color: #333 !important;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-100 font-sans antialiased">
+        <div class="min-h-screen flex flex-col">
+            <!-- Header -->
+            <header class="bg-indigo-500 text-white py-4 shadow-md">
+                <div
+                    class="container mx-auto px-4 flex justify-between items-center"
+                >
+                    <div class="flex items-center">
+                        <img
+                            src="https://placehold.co/50x50/3f51b5/ffffff?text=Logo"
+                            alt="Logo Sekolah"
+                            class="mr-2 rounded-full"
+                        />
+                        <h1 class="text-xl font-semibold">
+                            DIGISURAT SDN Balungbang Jaya 1
+                        </h1>
+                    </div>
+                    <div id="welcome-auth" style="display: none;">
+                        <span class="mr-4"
+                            id="welcome-message">Selamat Datang, [Nama Pengguna]</span
+                        >
+                        <a
+                            id="welcome-btn"
+                            href="#"
+                            class="text-indigo-200 hover:text-white transition-colors"
+                            >Login</a
+                        >
+                    </div>
+                </div>
+            </header>
+
+            <!-- Navbar -->
+            <nav class="bg-indigo-100 py-2 shadow-sm" id="navbar-link" style="display: none">
+                <div class="container mx-auto px-4">
+                    <div class="flex space-x-4 overflow-x-auto pb-2">
+                        <a
+                            href="#dashboard"
+                            class="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-200 px-3 py-2 rounded-md font-medium transition-colors whitespace-nowrap bg-indigo-200 text-indigo-800"
+                            >Dashboard</a
+                        >
+                        <a
+                            href="#surat-masuk"
+                            class="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-200 px-3 py-2 rounded-md font-medium transition-colors whitespace-nowrap"
+                            >Surat Masuk</a
+                        >
+                        <a
+                            href="#surat-keluar"
+                            class="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-200 px-3 py-2 rounded-md font-medium transition-colors whitespace-nowrap"
+                            >Surat Keluar</a
+                        >
+                        <a
+                            href="#arsip"
+                            class="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-200 px-3 py-2 rounded-md font-medium transition-colors whitespace-nowrap"
+                            >Arsip</a
+                        >
+                        <a
+                            href="#buat-surat"
+                            class="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-200 px-3 py-2 rounded-md font-medium transition-colors whitespace-nowrap"
+                            >Buat Surat</a
+                        >
+                        <a
+                            href="#user-management"
+                            class="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-200 px-3 py-2 rounded-md font-medium transition-colors whitespace-nowrap"
+                            id="user-management-nav"
+                            style="display: none;"
+                            >Pengguna</a
+                        >
+                        <a
+                            href="#pengaturan"
+                            class="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-200 px-3 py-2 rounded-md font-medium transition-colors whitespace-nowrap"
+                            >Pengaturan</a
+                        >
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="flex-1 container mx-auto px-4 py-6">
+                <div id="login" class="section">
+                    <h2
+                        class="text-2xl font-semibold mb-4 text-gray-800 text-center"
+                    >
+                        Login
+                    </h2>
+
+                    <div
+                        class="max-w-md mx-auto bg-white rounded-md shadow-md p-6"
+                    >
+                    <div id="login-alert" class="mb-4 px-4 py-3 rounded-md text-sm font-medium bg-gray-100 text-gray-800 border border-gray-300" role="alert">
+                    </div>
+
+                        <form id="login-form" class="space-y-4">
+                            <div>
+                                <label
+                                    for="email"
+                                    class="block text-gray-700 text-sm font-bold mb-2"
+                                    >Email</label
+                                >
+                                <input
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    required
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                />
+                            </div>
+                            <div>
+                                <label
+                                    for="password"
+                                    class="block text-gray-700 text-sm font-bold mb-2"
+                                    >Password</label
+                                >
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    required
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                />
+                            </div>
+                            <p>
+                                Belum punya akun?
+                                <a
+                                    href="#register"
+                                    class="text-indigo-600 hover:text-indigo-800"
+                                    >Daftar di sini</a
+                                >
+                            </p>
+                            <button
+                                type="submit"
+                                id="login-button"
+                                class="btn-primary w-full bg-indigo-200"
+                            >
+                                Login
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <div id="register" class="section" style="display: none">
+                    <h2
+                        class="text-2xl font-semibold mb-4 text-gray-800 text-center"
+                    >
+                        Register
+                    </h2>
+
+                    <div
+                        class="max-w-md mx-auto bg-white rounded-md shadow-md p-6"
+                    >
+                        <form id="register-form" class="space-y-4">
+                            <div>
+                                <label
+                                    for="email"
+                                    class="block text-gray-700 text-sm font-bold mb-2"
+                                    >Email</label
+                                >
+                                <input
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    required
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                />
+                            </div>
+                            <div>
+                                <label
+                                    for="password"
+                                    class="block text-gray-700 text-sm font-bold mb-2"
+                                    >Password</label
+                                >
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    required
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                />
+                            </div>
+                            <div>
+                                <label
+                                    for="password_confirmation"
+                                    class="block text-gray-700 text-sm font-bold mb-2"
+                                    >Password Confirmation</label
+                                >
+                                <input
+                                    type="password"
+                                    id="password_confirmation"
+                                    name="password_confirmation"
+                                    required
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                />
+                            </div>
+                            <p>
+                                Punya akun?
+                                <a
+                                    href="#login"
+                                    class="text-indigo-600 hover:text-indigo-800"
+                                    >Login di sini</a
+                                >
+                            </p>
+                            <button
+                                type="submit"
+                                id="register-button"
+                                class="btn-primary w-full bg-indigo-200"
+                            >
+                                Register
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="dashboard" class="section" style="display: none">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">
+                        Dashboard
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white rounded-md shadow-md p-4">
+                            <h3
+                                class="text-lg font-semibold text-gray-700 mb-2"
+                            >
+                                Surat Masuk Terbaru
+                            </h3>
+                            <ul id="surat-masuk-terbaru" class="list-none p-0">
+                                <!-- Data surat masuk akan ditampilkan di sini -->
+                            </ul>
+                        </div>
+                        <div class="bg-white rounded-md shadow-md p-4">
+                            <h3
+                                class="text-lg font-semibold text-gray-700 mb-2"
+                            >
+                                Surat Keluar Terbaru
+                            </h3>
+                            <ul id="surat-keluar-terbaru" class="list-none p-0">
+                                <!-- Data surat keluar akan ditampilkan di sini -->
+                            </ul>
+                        </div>
+                        <div class="bg-white rounded-md shadow-md p-4">
+                            <h3
+                                class="text-lg font-semibold text-gray-700 mb-2"
+                            >
+                                Total Arsip
+                            </h3>
+                            <p
+                                id="total-arsip"
+                                class="text-xl font-bold text-indigo-600"
+                            >
+                                0
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="surat-masuk" class="section" style="display: none">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">
+                        Manajemen Surat Masuk
+                    </h2>
+                    <button id="tambah-surat-masuk" class="btn-primary mb-4">
+                        Tambah Surat Masuk
+                    </button>
+                    <div
+                        class="bg-white rounded-md shadow-md p-4 overflow-x-auto"
+                    >
+                        <table
+                            id="tabel-surat-masuk"
+                            class="min-w-full table-auto rounded-md hidden"
+                        >
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        No. Surat
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Tanggal Terima
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Pengirim
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Perihal
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Penerima
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Aksi
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                <!-- Data surat masuk akan ditampilkan di sini -->
+                            </tbody>
+                        </table>
+                        <p
+                            id="surat-masuk-empty"
+                            class="text-center text-gray-500 py-4"
+                        >
+                            Tidak ada data surat masuk.
+                        </p>
+                    </div>
+                </div>
+
+                <div id="surat-keluar" class="section" style="display: none">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">
+                        Manajemen Surat Keluar
+                    </h2>
+                    <button id="tambah-surat-keluar" class="btn-primary mb-4">
+                        Tambah Surat Keluar
+                    </button>
+                    <div
+                        class="bg-white rounded-md shadow-md p-4 overflow-x-auto"
+                    >
+                        <table
+                            id="tabel-surat-keluar"
+                            class="min-w-full table-auto rounded-md hidden"
+                        >
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        No. Surat
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Tanggal Surat
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Tujuan
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Perihal
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        File
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Aksi
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                <!-- Data surat keluar akan ditampilkan di sini -->
+                            </tbody>
+                        </table>
+                        <p
+                            id="surat-keluar-empty"
+                            class="text-center text-gray-500 py-4"
+                        >
+                            Tidak ada data surat keluar.
+                        </p>
+                    </div>
+                </div>
+
+                <div id="arsip" class="section" style="display: none">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">
+                        Arsip Surat
+                    </h2>
+                    <div
+                        class="bg-white rounded-md shadow-md p-4 overflow-x-auto"
+                    >
+                        <table
+                            id="tabel-arsip"
+                            class="min-w-full table-auto rounded-md hidden"
+                        >
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        No. Surat
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Jenis Surat
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Perihal
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Tanggal Diarsipkan
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Aksi
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                <!-- Data arsip akan ditampilkan di sini -->
+                            </tbody>
+                        </table>
+                        <p
+                            id="arsip-empty"
+                            class="text-center text-gray-500 py-4"
+                        >
+                            Tidak ada data arsip.
+                        </p>
+                    </div>
+                </div>
+
+                <div id="buat-surat" class="section" style="display: none">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">
+                        Buat Surat Baru
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Form Pembuatan Surat -->
+                        <div class="bg-white rounded-md shadow-md p-4">
+                            <h3
+                                class="text-lg font-semibold text-gray-700 mb-4"
+                            >
+                                Pilih Template dan Isi Data
+                            </h3>
+                            <div class="mb-4">
+                                <label
+                                    for="template-select"
+                                    class="block text-gray-700 text-sm font-bold mb-2"
+                                    >Pilih Template:</label
+                                >
+                                <select
+                                    id="template-select"
+                                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                >
+                                    <option value="">
+                                        -- Pilih Template --
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div id="dynamic-form-fields" class="space-y-4">
+                                <!-- Form fields will be dynamically generated here -->
+                            </div>
+                            <div class="mt-6 flex space-x-2">
+                                <button
+                                    id="simpan-draft-surat"
+                                    class="btn-primary d-none"
+                                    style="display: none"
+                                >
+                                    Simpan Draft
+                                </button>
+                                <button
+                                    id="download-pdf"
+                                    class="btn-success"
+                                    style="display: none"
+                                >
+                                    Unduh PDF
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Preview Surat -->
+                        <div class="bg-white rounded-md shadow-md p-4">
+                            <h3
+                                class="text-lg font-semibold text-gray-700 mb-4"
+                            >
+                                Preview Surat
+                            </h3>
+                            <div
+                                id="letter-preview"
+                                class="border border-gray-300 rounded-md p-6 text-sm"
+                            >
+                                <p class="text-center text-gray-500">
+                                    Pilih template dan isi data untuk melihat
+                                    preview.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="user-management" class="section" style="display: none">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">
+                        Manajemen Pengguna
+                    </h2>
+                    <button id="tambah-user-management" class="btn-primary mb-4">
+                        Tambah Pengguna
+                    </button>
+                    <div
+                        class="bg-white rounded-md shadow-md p-4 overflow-x-auto"
+                    >
+                        <table
+                            id="tabel-user-management"
+                            class="min-w-full table-auto rounded-md hidden"
+                        >
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <!-- <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        No
+                                    </th> -->
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Email
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Role
+                                    </th>
+                                    <th
+                                        class="px-4 py-2 text-left whitespace-nowrap"
+                                    >
+                                        Aksi
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                <!-- Data pengguna akan ditampilkan di sini -->
+                            </tbody>
+                        </table>
+                        <p
+                            id="user-management-empty"
+                            class="text-center text-gray-500 py-4"
+                        >
+                            Tidak ada data pengguna.
+                        </p>
+                    </div>
+                </div>
+
+                <div id="pengaturan" class="section" style="display: none">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">
+                        Pengaturan
+                    </h2>
+                    <div class="bg-white rounded-md shadow-md p-4">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">
+                            Manajemen Kategori Arsip
+                        </h3>
+                        <ul
+                            id="daftar-kategori-arsip"
+                            class="list-none p-0 mb-4"
+                        >
+                            <!-- Kategori arsip akan ditampilkan di sini -->
+                        </ul>
+                        <div class="flex space-x-2">
+                            <input
+                                type="text"
+                                id="input-kategori-arsip"
+                                placeholder="Nama Kategori Arsip Baru"
+                                class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                            />
+                            <button
+                                id="tambah-kategori-arsip"
+                                class="btn-primary"
+                            >
+                                Tambah Kategori
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Footer -->
+            <footer class="bg-gray-200 text-gray-600 py-4 text-center">
+                <p>
+                    &copy; 2024 DIGISURAT SDN Balungbang Jaya 1. Hak Cipta
+                    Dilindungi.
+                </p>
+            </footer>
+        </div>
+
+        <div id="modal-tambah-user-management" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Tambah Pengguna</h2>
+                    <span class="close-button">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="form-tambah-user-management" class="space-y-4">
+                        <div>
+                            <label
+                                for="email-user-management"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Email</label
+                            >
+                            <input
+                                type="email"
+                                id="email-user-management"
+                                name="email"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                            <div
+                                id="email-user-management-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                        <div>
+                            <label for="role-user-management" class="block text-gray-700 text-sm font-bold mb-2">Role</label>
+                            <select
+                              id="role-user-management"
+                              name="role"
+                              required
+                              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            >
+                              <option value="" disabled selected>Pilih Role</option>
+                              <option value="user">User</option>
+                              <option value="admin">Admin</option>
+                            </select>
+                            <div
+                                id="role-user-management-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                          </div>
+                        <div>
+                            <label
+                                for="password-user-management"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Password</label
+                            >
+                            <input
+                                type="password"
+                                id="password-user-management"
+                                name="password"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                            <div
+                                id="password-user-management-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary close-button">
+                        Batal
+                    </button>
+                    <button
+                        type="button"
+                        class="btn-primary"
+                        id="simpan-user-management"
+                    >
+                        Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Tambah Surat Masuk -->
+        <div id="modal-tambah-surat-masuk" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Tambah Surat Masuk</h2>
+                    <span class="close-button">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="form-tambah-surat-masuk" class="space-y-4">
+                        <div>
+                            <label
+                                for="no-surat-masuk"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >No. Surat</label
+                            >
+                            <input
+                                type="text"
+                                id="no-surat-masuk"
+                                name="no_surat"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                            <div
+                                id="no-surat-masuk-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                        <div>
+                            <label
+                                for="tanggal-terima"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Tanggal Terima</label
+                            >
+                            <input
+                                type="date"
+                                id="tanggal-terima"
+                                name="tanggal_terima"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                            <div
+                                id="tanggal-terima-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                        <div>
+                            <label
+                                for="pengirim"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Pengirim</label
+                            >
+                            <input
+                                type="text"
+                                id="pengirim"
+                                name="pengirim"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                            <div
+                                id="pengirim-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                        <div>
+                            <label
+                                for="perihal-masuk"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Perihal</label
+                            >
+                            <input
+                                type="text"
+                                id="perihal-masuk"
+                                name="perihal"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                            <div
+                                id="perihal-masuk-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                        <div>
+                            <label
+                                for="penerima"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Penerima/Tujuan Surat</label
+                            >
+                            <input
+                                type="text"
+                                id="penerima"
+                                name="penerima"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                            <div
+                                id="penerima-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                        <div class="mb-4">
+                            <label
+                                for="lampiran-masuk"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Lampiran (Opsional)</label
+                            >
+                            <div class="file-upload-wrapper">
+                                <span class="file-upload-text">Pilih File</span>
+                                <span class="file-upload-button">Browse</span>
+                                <div class="file-upload-input-wrapper">
+                                    <input
+                                        type="file"
+                                        id="lampiran-masuk"
+                                        name="lampiran"
+                                    />
+                                </div>
+                            </div>
+                            <p
+                                id="file-name-masuk"
+                                class="mt-1 text-sm text-gray-500"
+                            ></p>
+                            <div
+                                id="lampiran-masuk-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary close-button">
+                        Batal
+                    </button>
+                    <button
+                        type="button"
+                        class="btn-primary"
+                        id="simpan-surat-masuk"
+                    >
+                        Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Detail Surat Masuk -->
+        <div id="modal-detail-surat-masuk" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detail Surat Masuk</h2>
+                    <span class="close-button">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="detail-surat-masuk-content" class="space-y-2">
+                        <p>
+                            <span class="font-semibold">No. Surat:</span>
+                            <span id="detail-no-surat-masuk"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Tanggal Terima:</span>
+                            <span id="detail-tanggal-terima"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Pengirim:</span>
+                            <span id="detail-pengirim"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Perihal:</span>
+                            <span id="detail-perihal-masuk"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Penerima:</span>
+                            <span id="detail-penerima"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Lampiran:</span>
+                            <span id="detail-lampiran-masuk"></span>
+                        </p>
+                        <div id="detail-disposisi" style="display: none">
+                            <h3 class="font-semibold mt-4">Disposisi</h3>
+                            <p>
+                                <span class="font-semibold"
+                                    >Ditujukan Kepada:</span
+                                >
+                                <span id="detail-disposisi-ke"></span>
+                            </p>
+                            <p>
+                                <span class="font-semibold"
+                                    >Catatan Disposisi:</span
+                                >
+                                <span id="detail-catatan-disposisi"></span>
+                            </p>
+                        </div>
+                    </div>
+                    <div
+                        id="disposisi-form"
+                        class="mt-4 space-y-4"
+                        style="display: none"
+                    >
+                        <h3 class="font-semibold">Disposisi Surat</h3>
+                        <div>
+                            <label
+                                for="disposisi-ke"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Disposisikan Ke:</label
+                            >
+                            <input
+                                type="text"
+                                id="disposisi-ke"
+                                name="disposisi_ke"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                            <div
+                                id="disposisi-ke-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                        <div>
+                            <label
+                                for="catatan-disposisi"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Catatan Disposisi:</label
+                            >
+                            <textarea
+                                id="catatan-disposisi"
+                                name="catatan_disposisi"
+                                rows="3"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            ></textarea>
+                            <div
+                                id="catatan-disposisi-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button
+                                type="button"
+                                class="btn-primary"
+                                id="simpan-disposisi"
+                            >
+                                Simpan Disposisi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary close-button">
+                        Tutup
+                    </button>
+                    <button
+                        type="button"
+                        class="btn-warning"
+                        id="disposisikan-surat"
+                    >
+                        Disposisikan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Tambah Surat Keluar -->
+        <div id="modal-tambah-surat-keluar" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Tambah Surat Keluar</h2>
+                    <span class="close-button">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form id="form-tambah-surat-keluar" class="space-y-4">
+                        <div>
+                            <label
+                                for="no-surat-keluar"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >No. Surat</label
+                            >
+                            <input
+                                type="text"
+                                id="no-surat-keluar"
+                                name="no_surat"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                            <div
+                                id="no-surat-keluar-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                        <div>
+                            <label
+                                for="tanggal-surat"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Tanggal Surat</label
+                            >
+                            <input
+                                type="date"
+                                id="tanggal-surat"
+                                name="tanggal_surat"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                            <div
+                                id="tanggal-surat-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                        <div>
+                            <label
+                                for="tujuan"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Tujuan</label
+                            >
+                            <input
+                                type="text"
+                                id="tujuan"
+                                name="tujuan"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                            <div
+                                id="tujuan-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                        <div>
+                            <label
+                                for="perihal-keluar"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Perihal</label
+                            >
+                            <input
+                                type="text"
+                                id="perihal-keluar"
+                                name="perihal"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            />
+                            <div
+                                id="perihal-keluar-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                        <div>
+                            <label
+                                for="isi-ringkas"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Isi Ringkas</label
+                            >
+                            <textarea
+                                id="isi-ringkas"
+                                name="isi_ringkas"
+                                rows="3"
+                                required
+                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            ></textarea>
+                            <div
+                                id="isi-ringkas-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                        <div class="mb-4">
+                            <label
+                                for="lampiran-keluar"
+                                class="block text-gray-700 text-sm font-bold mb-2"
+                                >Lampiran (Opsional)</label
+                            >
+                            <div class="file-upload-wrapper">
+                                <span class="file-upload-text">Pilih File</span>
+                                <span class="file-upload-button">Browse</span>
+                                <div class="file-upload-input-wrapper">
+                                    <input
+                                        type="file"
+                                        id="lampiran-keluar"
+                                        name="lampiran"
+                                    />
+                                </div>
+                            </div>
+                            <p
+                                id="file-name-keluar"
+                                class="mt-1 text-sm text-gray-500"
+                            ></p>
+                            <div
+                                id="lampiran-keluar-error"
+                                class="text-red-500 text-xs italic"
+                                style="display: none"
+                            ></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary close-button">
+                        Batal
+                    </button>
+                    <button
+                        type="button"
+                        class="btn-primary"
+                        id="simpan-surat-keluar"
+                    >
+                        Simpan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Detail Surat Keluar -->
+        <div id="modal-detail-surat-keluar" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detail Surat Keluar</h2>
+                    <span class="close-button">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="detail-surat-keluar-content" class="space-y-2">
+                        <p>
+                            <span class="font-semibold">No. Surat:</span>
+                            <span id="detail-no-surat-keluar"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Tanggal Surat:</span>
+                            <span id="detail-tanggal-surat"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Tujuan:</span>
+                            <span id="detail-tujuan"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Perihal:</span>
+                            <span id="detail-perihal-keluar"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Isi Ringkas:</span>
+                            <span id="detail-isi-ringkas"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Lampiran:</span>
+                            <span id="detail-lampiran-keluar"></span>
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary close-button">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Detail Arsip -->
+        <div id="modal-detail-arsip" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Detail Arsip</h2>
+                    <span class="close-button">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="detail-arsip-content" class="space-y-2">
+                        <p>
+                            <span class="font-semibold">No. Surat:</span>
+                            <span id="detail-no-surat-arsip"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Jenis Surat:</span>
+                            <span id="detail-jenis-surat-arsip"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Perihal:</span>
+                            <span id="detail-perihal-arsip"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold"
+                                >Tanggal Diarsipkan:</span
+                            >
+                            <span id="detail-tanggal-arsip"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Lampiran:</span>
+                            <span id="detail-lampiran-arsip"></span>
+                        </p>
+                        <p>
+                            <span class="font-semibold">Isi Ringkas:</span>
+                            <span id="detail-isi-ringkas-arsip"></span>
+                        </p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary close-button">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script type="module">
+            import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+            const SUPABASE_URL = "https://opwjnfnocdkssqraramv.supabase.co";
+            const SUPABASE_ANON_KEY =
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wd2puZm5vY2Rrc3NxcmFyYW12Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwNDk1NjcsImV4cCI6MjA2NDYyNTU2N30.a1CZhXOnN6CDPCqrrhxE0y5bpwatpCzWs7yaK9H0KUc";
+
+            const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+            // Inside your DOMContentLoaded listener:
+            document.addEventListener("DOMContentLoaded", () => {
+                // --- Global Variables (will be replaced by Supabase fetches) ---
+                let suratMasukList = []; // [cite: 1]
+                let usersList = []; // [cite: 1]
+                let suratKeluarList = []; // [cite: 1]
+                let arsipList = []; // [cite: 1]
+                let kategoriArsipList = [
+                    "Umum",
+                    "Keuangan",
+                    "Kesiswaan",
+                    "Kurikulum",
+                ]; // Example archive categories // [cite: 1]
+                let totalArsip = 0; // [cite: 1]
+                let user = null; // [cite: 1]
+                let auth = false; // [cite: 1]
+                let role = null; // [cite: 1]
+
+                // (Keep other existing global variables like letterTemplates, currentLetterData, and DOM elements)
+                const dashboardSection = document.getElementById("dashboard");
+                const suratMasukSection =
+                    document.getElementById("surat-masuk");
+                const suratKeluarSection =
+                    document.getElementById("surat-keluar");
+                const arsipSection = document.getElementById("arsip");
+                const buatSuratSection = document.getElementById("buat-surat");
+                const pengaturanSection = document.getElementById("pengaturan");
+
+                const tambahSuratMasukButton =
+                    document.getElementById("tambah-surat-masuk");
+                const tambahSuratKeluarButton = document.getElementById(
+                    "tambah-surat-keluar"
+                );
+                const simpanDraftSuratButton =
+                    document.getElementById("simpan-draft-surat");
+                const downloadPdfButton =
+                    document.getElementById("download-pdf");
+
+                const modalTambahSuratMasuk = document.getElementById(
+                    "modal-tambah-surat-masuk"
+                );
+                const modalTambahUserManagement = document.getElementById(
+                    "modal-tambah-user-management"
+                );
+                const modalDetailSuratMasuk = "modal-detail-surat-masuk";
+                const modalTambahSuratKeluar = document.getElementById(
+                    "modal-tambah-surat-keluar"
+                );
+                const modalDetailSuratKeluar = document.getElementById(
+                    "modal-detail-surat-keluar"
+                );
+                const modalDetailArsip = "modal-detail-arsip";
+
+                const closeButtons = document.querySelectorAll(".close-button");
+                const simpanSuratMasukButton =
+                    document.getElementById("simpan-surat-masuk");
+                const simpanSuratKeluarButton = document.getElementById(
+                    "simpan-surat-keluar"
+                );
+                const simpanDisposisiButton =
+                    document.getElementById("simpan-disposisi");
+                const disposisikanSuratButton =
+                    document.getElementById("disposisikan-surat");
+                const simpanTambahUserManagement = document.getElementById(
+                    "simpan-user-management"
+                );
+
+                const formTambahSuratMasuk = document.getElementById(
+                    "form-tambah-surat-masuk"
+                );
+                const formTambahUserManagement = document.getElementById(
+                    "form-tambah-user-management"
+                );
+                const formTambahSuratKeluar = document.getElementById(
+                    "form-tambah-surat-keluar"
+                );
+
+                const tabelSuratMasuk =
+                    document.getElementById("tabel-surat-masuk");
+                const tabelSuratKeluar =
+                    document.getElementById("tabel-surat-keluar");
+                const tabelArsip = document.getElementById("tabel-arsip");
+
+                const suratMasukTerbaruList = document.getElementById(
+                    "surat-masuk-terbaru"
+                );
+                const suratKeluarTerbaruList = document.getElementById(
+                    "surat-keluar-terbaru"
+                );
+                const totalArsipElement =
+                    document.getElementById("total-arsip");
+                const daftarKategoriArsip = document.getElementById(
+                    "daftar-kategori-arsip"
+                );
+                const tambahKategoriArsipButton = document.getElementById(
+                    "tambah-kategori-arsip"
+                );
+                const inputKategoriArsip = document.getElementById(
+                    "input-kategori-arsip"
+                );
+
+                const suratMasukEmpty =
+                    document.getElementById("surat-masuk-empty");
+                const suratKeluarEmpty =
+                    document.getElementById("surat-keluar-empty");
+                const arsipEmpty = document.getElementById("arsip-empty");
+
+                const templateSelect =
+                    document.getElementById("template-select");
+                const dynamicFormFields = document.getElementById(
+                    "dynamic-form-fields"
+                );
+                const letterPreview = document.getElementById("letter-preview");
+
+                // usermanagement
+                const userManagementTabel = document.getElementById(
+                    "tabel-user-management"
+                );
+                const tambahUserManagementButton = document.getElementById(
+                    "tambah-user-management"
+                );
+                const userManagementEmpty = document.getElementById(
+                    "user-management-empty"
+                );
+
+                // auth
+                const registerButton = document.getElementById("register-button");
+                const loginButton = document.getElementById("login-button");
+                const logoutButton = document.getElementById("logout-button");
+                const registerForm = document.getElementById("register-form");
+                const loginForm = document.getElementById("login-form");
+
+                const letterTemplates = [
+                    {
+                        name: "Surat Undangan Rapat",
+                        fields: [
+                            {
+                                id: "nomor_surat_undangan",
+                                label: "Nomor Surat",
+                                type: "text",
+                                placeholder: "Contoh: 001/SDN-BJ1/VI/2024",
+                            },
+                            {
+                                id: "tanggal_surat_undangan",
+                                label: "Tanggal Surat",
+                                type: "date",
+                            },
+                            {
+                                id: "tujuan_undangan",
+                                label: "Kepada Yth.",
+                                type: "text",
+                                placeholder: "Nama/Jabatan Penerima",
+                            },
+                            {
+                                id: "tempat_undangan",
+                                label: "Tempat Rapat",
+                                type: "text",
+                                placeholder: "Contoh: Ruang Guru",
+                            },
+                            {
+                                id: "hari_tanggal_rapat",
+                                label: "Hari, Tanggal Rapat",
+                                type: "text",
+                                placeholder: "Contoh: Senin, 10 Juni 2024",
+                            },
+                            {
+                                id: "waktu_rapat",
+                                label: "Waktu Rapat",
+                                type: "text",
+                                placeholder: "Contoh: 09.00 - 11.00 WIB",
+                            },
+                            {
+                                id: "agenda_rapat",
+                                label: "Agenda Rapat",
+                                type: "textarea",
+                                placeholder:
+                                    "Contoh: 1. Pembahasan KBM semester ganjil\n2. Evaluasi kinerja guru",
+                            },
+                            {
+                                id: "penanda_tangan",
+                                label: "Nama Penanda Tangan",
+                                type: "text",
+                                placeholder: "Contoh: Kepala Sekolah",
+                            },
+                            {
+                                id: "jabatan_penanda_tangan",
+                                label: "Jabatan Penanda Tangan",
+                                type: "text",
+                                placeholder:
+                                    "Contoh: Kepala SDN Balungbang Jaya 1",
+                            },
+                        ],
+                        content_template: `
+SDN BALUNGBANG JAYA 1
+Jl. Contoh No. 123, Balungbang Jaya
+
+Nomor : {{nomor_surat_undangan}}
+Lamp   : -
+Hal    : Undangan Rapat
+
+Yth.
+Bapak/Ibu {{tujuan_undangan}}
+di Tempat
+
+Dengan hormat,
+
+Sehubungan akan dilaksanakannya rapat rutin, kami mengundang Bapak/Ibu untuk hadir pada:
+
+Hari, Tanggal : {{hari_tanggal_rapat}}
+Waktu          : {{waktu_rapat}}
+Tempat         : {{tempat_undangan}}
+Agenda         : {{agenda_rapat}}
+
+Mengingat pentingnya rapat ini, kami sangat mengharapkan kehadiran Bapak/Ibu tepat waktu.
+
+Demikian surat undangan ini kami sampaikan, atas perhatian dan kehadiran Bapak/Ibu kami ucapkan terima kasih.
+
+Hormat kami,
+
+{{tanggal_surat_undangan}}
+
+({{penanda_tangan}})
+{{jabatan_penanda_tangan}}
+          `,
+                    },
+                    {
+                        name: "Surat Keterangan Siswa Aktif",
+                        fields: [
+                            {
+                                id: "nomor_surat_ket",
+                                label: "Nomor Surat",
+                                type: "text",
+                                placeholder:
+                                    "Contoh: 002/SK-SA/SDN-BJ1/VI/2024",
+                            },
+                            {
+                                id: "tanggal_surat_ket",
+                                label: "Tanggal Surat",
+                                type: "date",
+                            },
+                            {
+                                id: "nama_siswa",
+                                label: "Nama Siswa",
+                                type: "text",
+                                placeholder: "Nama Lengkap Siswa",
+                            },
+                            {
+                                id: "nisn_siswa",
+                                label: "NISN",
+                                type: "text",
+                                placeholder: "Nomor Induk Siswa Nasional",
+                            },
+                            {
+                                id: "kelas_siswa",
+                                label: "Kelas",
+                                type: "text",
+                                placeholder: "Contoh: VI A",
+                            },
+                            {
+                                id: "alamat_siswa",
+                                label: "Alamat Siswa",
+                                type: "textarea",
+                                placeholder: "Alamat Lengkap Siswa",
+                            },
+                            {
+                                id: "keperluan_surat",
+                                label: "Keperluan Surat",
+                                type: "textarea",
+                                placeholder:
+                                    "Contoh: Untuk keperluan pengajuan beasiswa",
+                            },
+                            {
+                                id: "penanda_tangan_ket",
+                                label: "Nama Penanda Tangan",
+                                type: "text",
+                                placeholder: "Contoh: Kepala Sekolah",
+                            },
+                            {
+                                id: "jabatan_penanda_tangan_ket",
+                                label: "Jabatan Penanda Tangan",
+                                type: "text",
+                                placeholder:
+                                    "Contoh: Kepala SDN Balungbang Jaya 1",
+                            },
+                        ],
+                        content_template: `
+SDN BALUNGBANG JAYA 1
+Jl. Contoh No. 123, Balungbang Jaya
+
+Nomor : {{nomor_surat_ket}}
+Lamp   : -
+Hal    : Surat Keterangan Siswa Aktif
+
+Yang bertanda tangan di bawah ini:
+Nama           : {{penanda_tangan_ket}}
+Jabatan        : {{jabatan_penanda_tangan_ket}}
+
+Menerangkan dengan sesungguhnya bahwa:
+Nama           : {{nama_siswa}}
+NISN           : {{nisn_siswa}}
+Kelas          : {{kelas_siswa}}
+Alamat         : {{alamat_siswa}}
+
+Adalah benar siswa aktif di SDN Balungbang Jaya 1 pada tahun pelajaran 2023/2024.
+
+Surat keterangan ini dibuat sebagai {{keperluan_surat}}.
+
+Demikian surat keterangan ini dibuat untuk dapat dipergunakan sebagaimana mestinya.
+
+{{tanggal_surat_ket}}
+
+({{penanda_tangan_ket}})
+{{jabatan_penanda_tangan_ket}}
+          `,
+                    },
+                ];
+
+                let currentLetterData = {};
+
+                function showModal(modalId) {
+                    document.getElementById(modalId).style.display = "block";
+                    document.body.style.overflow = "hidden"; // Prevent scrolling
+                }
+
+                function hideModal(modalId) {
+                    document.getElementById(modalId).style.display = "none";
+                    document.body.style.overflow = "auto"; // Restore scrolling
+                }
+
+                function showSection(sectionId) {
+                    dashboardSection.style.display = "none";
+                    suratMasukSection.style.display = "none";
+                    suratKeluarSection.style.display = "none";
+                    arsipSection.style.display = "none";
+                    buatSuratSection.style.display = "none"; // Hide Buat Surat section by default
+                    pengaturanSection.style.display = "none";
+                    document.getElementById("login").style.display = "none";
+                    document.getElementById("register").style.display = "none";
+
+                    document.getElementById(sectionId).style.display = "block";
+                }
+
+                function populateTemplateSelect() {
+                    letterTemplates.forEach((template) => {
+                        const option = document.createElement("option");
+                        option.value = template.name;
+                        option.textContent = template.name;
+                        templateSelect.appendChild(option);
+                    });
+                }
+
+                // --- Helper function for Supabase operations ---
+                async function getUserId() {
+                    // In a real application, you'd get the authenticated user's ID.
+                    // For this example, we'll use a placeholder or assume a way to get one.
+                    // If Supabase Auth is integrated, you'd do:
+                    // const { data: { user } } = await supabase.auth.getUser();
+                    // return user ? user.id : null;
+
+                    // For demonstration, let's try to fetch an existing user or create a dummy one
+                    // This is a simplification and not how auth should be handled in production.
+                    try {
+                        const { data: users, error } = await supabase
+                            .from("users")
+                            .select("id")
+                            .limit(1);
+
+                        if (error) throw error;
+
+                        if (users && users.length > 0) {
+                            return users[0].id;
+                        } else {
+                            // If no user exists, create a dummy one for demonstration
+                            const { data: newUser, error: createError } =
+                                await supabase
+                                    .from("users")
+                                    .insert([
+                                        {
+                                            email: "dummy.user@example.com",
+                                            role: "user",
+                                        },
+                                    ])
+                                    .select("id");
+
+                            if (createError) throw createError;
+                            return newUser[0].id;
+                        }
+                    } catch (e) {
+                        console.error("Error getting or creating user ID:", e);
+                        return null; // Handle error appropriately
+                    }
+                }
+
+                // --- Functions to interact with Supabase ---
+                // register user
+                async function registerUser(email, password) {
+                    if (!email || !password) {
+                        alert("Email and password are required.");
+                        return;
+                    }
+
+                    const newUser = {
+                        email,
+                        role: "user", // Default role, can be changed based on your auth logic
+                    };
+
+                    const { data, error } = await supabase
+                        .from("users")
+                        .insert([newUser])
+                        .select();
+
+                    if (error) {
+                        console.error("Error registering user:", error.message);
+                        alert("Failed to register user. Please try again.");
+                        return null;
+                    }
+
+                    // After inserting user, you can also handle authentication
+                    // hapus semua value input di registerForm
+                    registerForm.reset();
+                    showSection('login');
+                    setTimeout(() => {
+                        alert(
+                            "Registration successful! Please log in with your new account."
+                        );
+                    }, 1000);
+                }
+
+                // login user
+                async function loginUser(email, password) {
+                    if (!email || !password) {
+                        alert("Email and password are required.");
+                        return;
+                    }
+
+                    // check user
+                    const { data: users, error } = await supabase
+                        .from("users")
+                        .select("*")
+                        .eq("email", email)
+                        .single();
+
+                    if (error || !users) {
+                        alert("User not found. Please register first.");
+                        return null;
+                    }
+
+                    // hapus semua localStorage
+                    localStorage.clear();
+                    localStorage.setItem("user", users);
+                    localStorage.setItem("role", users.role);
+                    localStorage.setItem("auth", true);
+
+                    user = users;
+                    auth = true;
+                    role = users.role;
+
+                    document.getElementById('login').style.display = 'none';
+                    showSection('dashboard');
+                    window.location.reload();
+                }
+
+                // Kategori Arsip CRUD
+                async function fetchKategoriArsip() {
+                    const { data, error } = await supabase
+                        .from("kategori_arsip")
+                        .select("*")
+                        .order("nama_kategori", { ascending: true });
+                    if (error) {
+                        console.error(
+                            "Error fetching categories:",
+                            error.message
+                        );
+                        return [];
+                    }
+                    return data;
+                }
+
+                async function addKategoriArsipSupabase(
+                    nama_kategori,
+                    deskripsi = null
+                ) {
+                    const userId = await getUserId();
+                    if (!userId) {
+                        alert("User not authenticated. Cannot add category.");
+                        return null;
+                    }
+                    const { data, error } = await supabase
+                        .from("kategori_arsip")
+                        .insert([{ nama_kategori, deskripsi }])
+                        .select();
+                    if (error) {
+                        console.error("Error adding category:", error.message);
+                        alert(
+                            "Failed to add category. Make sure the category name is unique."
+                        );
+                        return null;
+                    }
+                    return data[0];
+                }
+
+                async function deleteKategoriArsipSupabase(id) {
+                    const { error } = await supabase
+                        .from("kategori_arsip")
+                        .delete()
+                        .eq("id", id);
+                    if (error) {
+                        console.error(
+                            "Error deleting category:",
+                            error.message
+                        );
+                        alert("Failed to delete category.");
+                        return false;
+                    }
+                    return true;
+                }
+
+                async function fetchPengguna() {
+                    const { data, error } = await supabase
+                        .from("users")
+                        .select()
+                        .order("created_at", { ascending: false });
+                    if (error) {
+                        console.error(
+                            "Error fetching incoming letters:",
+                            error.message
+                        );
+                        return [];
+                    }
+                    return data;
+                }
+
+                async function addUserManagementSupabase(userData){
+                    const { email, password, role } = userData;
+                    if (!email || !password || !role) {
+                        alert("Email, password, and role are required.");
+                        return false;
+                    }
+
+                    const { data, error } = await supabase
+                        .from("users")
+                        .insert([{ email, role }])
+                        .select();
+                    if (error) {
+                        console.error(
+                            "Error adding user:",
+                            error.message
+                        );
+                        alert("Failed to add user. Make sure the email is unique.");
+                        return false;
+                    }
+                    return true;
+                }
+
+                async function updateUserManagementSupabase(userData, id){
+                    const { email, password, role } = userData;
+                    if (!email || !role) {
+                        alert("Email, and role are required.");
+                        return false;
+                    }
+
+                    const { data, error } = await supabase
+                        .from("users")
+                        .update({ email, role })
+                        .eq("id", id)
+                        .select();
+                    if (error) {
+                        console.error(
+                            "Error updating user:",
+                            error.message
+                        );
+                        alert("Failed to update user.");
+                        return false;
+                    }
+                    return true;
+                }
+
+                async function deleteUser(id){
+                    const { error } = await supabase
+                        .from("users")
+                        .delete()
+                        .eq("id", id);
+                    if (error) {
+                        console.error(
+                            "Error deleting user:",
+                            error.message
+                        );
+                        alert("Failed to delete user.");
+                        return false;
+                    }
+                    return true;
+                }
+
+                // Surat Masuk CRUD
+                async function fetchSuratMasuk() {
+                    const { data, error } = await supabase
+                        .from("surat_masuk")
+                        .select()
+                        .order("tanggal_surat", { ascending: false });
+                    if (error) {
+                        console.error(
+                            "Error fetching incoming letters:",
+                            error.message
+                        );
+                        return [];
+                    }
+                    return data;
+                }
+
+
+                async function uploadFile(bucketName, file) {
+                    const fileName = `${Date.now()}_${file.name}`;
+                    const { data, error } = await supabase.storage
+                        .from(bucketName)
+                        .upload(fileName, file);
+                    if (error) {
+                        console.error("Error uploading file:", error.message);
+                        return null;
+                    }
+                    // Construct the public URL
+                    const { data: publicUrlData } = supabase.storage
+                        .from(bucketName)
+                        .getPublicUrl(data.path);
+                    return publicUrlData.publicUrl;
+                }
+
+                async function addSuratMasukSupabase(suratData, file) {
+                    let lampiranUrl = null;
+                    const userId = await getUserId();
+                    if (!userId) {
+                        alert(
+                            "User not authenticated. Cannot add incoming letter."
+                        );
+                        return null;
+                    }
+                    if (file) {
+                        lampiranUrl = await uploadFile(
+                            "incoming-attachments",
+                            file
+                        );
+                        if (!lampiranUrl) {
+                            alert(
+                                "Failed to upload attachment. Cannot add incoming letter."
+                            );
+                            return null;
+                        }
+                    }
+
+                    const { data, error } = await supabase
+                        .from("surat_masuk")
+                        .insert([
+                            {
+                                nomor_surat: suratData.no_surat,
+                                tanggal_surat: suratData.tanggal_terima, // Map to tanggal_surat in DB
+                                pengirim: suratData.pengirim,
+                                perihal: suratData.perihal,
+                                lampiran_url: lampiranUrl,
+                                status: suratData.penerima, // Default status
+                                // created_by: userId,
+                            },
+                        ])
+                        .select();
+                    if (error) {
+                        console.error(
+                            "Error adding incoming letter:",
+                            error.message
+                        );
+                        alert(
+                            "Failed to add incoming letter. Make sure the letter number is unique."
+                        );
+                        return null;
+                    }
+                    return data[0];
+                }
+
+                async function updateSuratMasukStatus(id, newStatus) {
+                    const { data, error } = await supabase
+                        .from("surat_masuk")
+                        .update({ status: newStatus })
+                        .eq("id", id)
+                        .select();
+                    if (error) {
+                        console.error(
+                            "Error updating incoming letter status:",
+                            error.message
+                        );
+                        return null;
+                    }
+                    return data[0];
+                }
+
+                async function hapusSuratMasuk(id) {
+                    const { error } = await supabase
+                        .from("surat_masuk")
+                        .delete()
+                        .eq("id", id);
+                    if (error) {
+                        console.error(
+                            "Error deleting incoming letter:",
+                            error.message
+                        );
+                        alert("Failed to delete incoming letter.");
+                        return false;
+                    }
+                    return true;
+                }
+
+                // Surat Keluar CRUD
+                async function fetchSuratKeluar() {
+                    const { data, error } = await supabase
+                        .from("surat_keluar")
+                        .select("*")
+                        .order("tanggal_surat", { ascending: false });
+                    if (error) {
+                        console.error(
+                            "Error fetching outgoing letters:",
+                            error.message
+                        );
+                        return [];
+                    }
+                    return data;
+                }
+
+                async function addSuratKeluarSupabase(suratData, file) {
+                    let lampiranUrl = null;
+                    const userId = await getUserId();
+                    if (!userId) {
+                        alert(
+                            "User not authenticated. Cannot add outgoing letter."
+                        );
+                        return null;
+                    }
+                    if (file) {
+                        lampiranUrl = await uploadFile(
+                            "outgoing-attachments",
+                            file
+                        );
+                        if (!lampiranUrl) {
+                            alert(
+                                "Failed to upload attachment. Cannot add outgoing letter."
+                            );
+                            return null;
+                        }
+                    }
+
+                    const { data, error } = await supabase
+                        .from("surat_keluar")
+                        .insert([
+                            {
+                                nomor_surat: suratData.no_surat,
+                                tanggal_surat: suratData.tanggal_surat,
+                                penerima: suratData.penerima, // Map to penerima in DB
+                                perihal: suratData.perihal,
+                                isi_surat: suratData.isi_ringkas || "-", // Map to isi_surat in DB
+                                lampiran_url: lampiranUrl,
+                                status: "draft", // Default status
+                                // created_by: userId,
+                                template_used: suratData.template_used, // If applicable
+                            },
+                        ])
+                        .select();
+                    if (error) {
+                        console.error(
+                            "Error adding outgoing letter:",
+                            error.message
+                        );
+                        alert(
+                            "Failed to add outgoing letter. Make sure the letter number is unique."
+                        );
+                        return null;
+                    }
+                    return data[0];
+                }
+
+                // Arsip CRUD
+                async function fetchArsip() {
+                    const { data, error } = await supabase
+                        .from("arsip")
+                        .select("*, kategori_arsip(nama_kategori)") // Fetch category name
+                        .order("tanggal_arsip", { ascending: false });
+                    if (error) {
+                        console.error(
+                            "Error fetching archives:",
+                            error.message
+                        );
+                        return [];
+                    }
+                    // Flatten the data to include nama_kategori directly
+                    return data.map((item) => ({
+                        ...item,
+                        nama_kategori: item.kategori_arsip
+                            ? item.kategori_arsip.nama_kategori
+                            : "N/A",
+                    }));
+                }
+
+                async function addArsipSupabase(arsipData) {
+                    const userId = await getUserId();
+                    if (!userId) {
+                        alert("User not authenticated. Cannot archive letter.");
+                        return null;
+                    }
+                    const { data, error } = await supabase
+                        .from("arsip")
+                        .insert([
+                            {
+                                judul: arsipData.no_surat,
+                                perihal: arsipData.perihal, // Using perihal as judul for simplicity
+                                deskripsi: arsipData.disposisi
+                                    ? `${arsipData.disposisi.catatan}`
+                                    : arsipData.isi_ringkas,
+                                tanggal_arsip: new Date()
+                                    .toISOString()
+                                    .slice(0, 10), // Current date
+                                file_url:
+                                    arsipData.lampiran_url ||
+                                    arsipData.lampiran, // Use existing URL or local URL
+                                kategori_id: arsipData.kategori_id || null, // Will need to select this in UI
+                                related_surat_id: arsipData.id,
+                                related_surat_type:
+                                    arsipData.jenis_surat === "Surat Masuk"
+                                        ? "masuk"
+                                        : "keluar",
+                                // created_by: userId,
+                            },
+                        ])
+                        .select();
+                    if (error) {
+                        console.error("Error adding archive:", error.message);
+                        alert("Failed to archive letter.");
+                        return null;
+                    }
+                    return data[0];
+                }
+
+                // --- Update existing functions to use Supabase ---
+                function generateTemplateForm(templateName) {
+                    dynamicFormFields.innerHTML = ""; // Clear previous fields
+                    letterPreview.innerHTML =
+                        '<p class="text-center text-gray-500">Pilih template dan isi data untuk melihat preview.</p>'; // Reset preview
+                    downloadPdfButton.style.display = "none"; // Hide download button
+
+                    const selectedTemplate = letterTemplates.find(
+                        (t) => t.name === templateName
+                    );
+
+                    if (selectedTemplate) {
+                        selectedTemplate.fields.forEach((field) => {
+                            const div = document.createElement("div");
+                            div.className = "mb-4";
+
+                            const label = document.createElement("label");
+                            label.setAttribute("for", field.id);
+                            label.className =
+                                "block text-gray-700 text-sm font-bold mb-2";
+                            label.textContent = field.label;
+                            div.appendChild(label);
+
+                            let inputElement;
+                            if (field.type === "textarea") {
+                                inputElement =
+                                    document.createElement("textarea");
+                                inputElement.rows = 4;
+                            } else {
+                                inputElement = document.createElement("input");
+                                inputElement.type = field.type;
+                            }
+                            inputElement.id = field.id;
+                            inputElement.name = field.id;
+                            inputElement.placeholder = field.placeholder || "";
+                            inputElement.className =
+                                "shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline";
+                            inputElement.required = true; // All fields are required for now
+                            inputElement.addEventListener(
+                                "input",
+                                updateLetterPreview
+                            );
+                            div.appendChild(inputElement);
+
+                            dynamicFormFields.appendChild(div);
+                        });
+                        // Immediately update preview to show static template content
+                        updateLetterPreview();
+                    }
+                }
+
+                function updateLetterPreview() {
+                    const selectedTemplateName = templateSelect.value;
+                    const selectedTemplate = letterTemplates.find(
+                        (t) => t.name === selectedTemplateName
+                    );
+
+                    if (selectedTemplate) {
+                        let renderedContent = selectedTemplate.content_template;
+                        currentLetterData = {}; // Reset data
+
+                        selectedTemplate.fields.forEach((field) => {
+                            const inputElement = document.getElementById(
+                                field.id
+                            );
+                            const value = inputElement
+                                ? inputElement.value
+                                : "";
+                            renderedContent = renderedContent.replace(
+                                new RegExp(`{{${field.id}}}`, "g"),
+                                value
+                            );
+                            currentLetterData[field.id] = value; // Store data for download/save
+                        });
+                        letterPreview.textContent = renderedContent; // Use textContent to prevent XSS and preserve newlines
+                        downloadPdfButton.style.display = "inline-block"; // Show download button
+                    } else {
+                        letterPreview.innerHTML =
+                            '<p class="text-center text-gray-500">Pilih template dan isi data untuk melihat preview.</p>';
+                        downloadPdfButton.style.display = "none";
+                    }
+                }
+
+                async function downloadLetterAsPdf() {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+
+                    // Get the content from the letter preview div
+                    const content = document.getElementById("letter-preview");
+
+                    // Optional: Add a title to the PDF, if desired
+                    // doc.text("Surat Resmi", 10, 10);
+
+                    // Add content from the letter-preview div using html2canvas to render HTML to canvas, then to image
+                    // This helps maintain styling better than just doc.text for complex layouts
+                    html2canvas(content, {
+                        scale: 2, // Increase scale for better quality PDF
+                    })
+                        .then((canvas) => {
+                            const imgData = canvas.toDataURL("image/png");
+                            const imgWidth = 210; // A4 width in mm
+                            const pageHeight = 297; // A4 height in mm
+                            const imgHeight =
+                                (canvas.height * imgWidth) / canvas.width;
+                            let heightLeft = imgHeight;
+
+                            let position = 0;
+
+                            doc.addImage(
+                                imgData,
+                                "PNG",
+                                0,
+                                position,
+                                imgWidth,
+                                imgHeight
+                            );
+                            heightLeft -= pageHeight;
+
+                            while (heightLeft >= 0) {
+                                position = heightLeft - imgHeight;
+                                doc.addPage();
+                                doc.addImage(
+                                    imgData,
+                                    "PNG",
+                                    0,
+                                    position,
+                                    imgWidth,
+                                    imgHeight
+                                );
+                                heightLeft -= pageHeight;
+                            }
+
+                            // Save the PDF
+                            const rawTitle = templateSelect.value.trim();
+                            const titleCase = rawTitle
+                                .toLowerCase()
+                                .split(/\s+/)
+                                .map(
+                                    (word) =>
+                                        word.charAt(0).toUpperCase() +
+                                        word.slice(1)
+                                )
+                                .join(" ");
+
+                            const dateStr = new Date()
+                                .toISOString()
+                                .slice(0, 10);
+                            const filename = `${titleCase} ${dateStr}.pdf`;
+
+                            doc.save(filename);
+                        })
+                        .catch((error) => {
+                            console.error("Error generating PDF:", error);
+                            alert("Gagal mengunduh PDF. Silakan coba lagi.");
+                        });
+                }
+
+                // Initial rendering functions
+                async function initializeData() {
+                    // get localStorage
+                    const storedAuth = localStorage.getItem("auth");
+                    const storedUser = localStorage.getItem("user");
+                    const storedRole = localStorage.getItem("role");
+
+                    if(!storedAuth){
+                        localStorage.clear();
+                        showSection('login');
+                        setTimeout(() => {
+                            document.getElementById('login-alert').innerText = "Silakan login terlebih dahulu.";
+                        }, 1000);
+                        return;
+                    }
+
+                    suratMasukList = await fetchSuratMasuk();
+                    usersList = await fetchPengguna();
+                    suratKeluarList = await fetchSuratKeluar();
+                    arsipList = await fetchArsip();
+                    kategoriArsipList = await fetchKategoriArsip(); // Now stores objects {id, nama_kategori, ...}
+
+                    showSection('dashboard');
+                    renderUserManagement();
+                    renderSuratMasukList();
+                    renderSuratKeluarList();
+                    renderArsipList();
+                    renderKategoriArsip();
+                    updateSuratMasukTerbaru();
+                    updateSuratKeluarTerbaru();
+                    updateTotalArsip();
+
+                    const isLoggedIn = storedAuth === "true";
+                    const welcomeAuth = document.getElementById("welcome-auth");
+                    const welcomeMessage = document.getElementById("welcome-message");
+                    const welcomeBtn = document.getElementById("welcome-btn");
+                    const userManagementNav = document.getElementById("user-management-nav");
+
+                    welcomeAuth.style.display = isLoggedIn ? "block" : "none";
+                    welcomeMessage.innerText = isLoggedIn
+                        ? `Selamat datang, ${storedUser?.email || storedRole}!`
+                        : "Selamat datang di Sistem Informasi Surat Sekolah!";
+                    welcomeBtn.href = isLoggedIn ? "#logout" : "#login";
+                    welcomeBtn.innerText = isLoggedIn ? "Logout" : "Login";
+                    document.getElementById('navbar-link').style.display = isLoggedIn ? 'block' : 'none';
+
+                    if(storedRole === "admin") {
+                        userManagementNav.style.display = "block"; // Show user management for admin
+                    }
+                }
+
+                // Modified render functions
+                async function renderSuratMasukList() {
+                    const tabelBody = tabelSuratMasuk.querySelector("tbody"); // [cite: 269]
+                    tabelBody.innerHTML = ""; // Clear table // [cite: 270]
+
+                    const suratMasukData = await fetchSuratMasuk(); // Fetch updated data
+                    if (suratMasukData.length === 0) {
+                        tabelSuratMasuk.classList.add("hidden"); // [cite: 270]
+                        suratMasukEmpty.classList.remove("hidden"); // [cite: 270]
+                    } else {
+                        tabelSuratMasuk.classList.remove("hidden"); // [cite: 270]
+                        suratMasukEmpty.classList.add("hidden"); // [cite: 270]
+                        suratMasukData.forEach((surat) => {
+                            const row = tabelBody.insertRow(); // [cite: 271]
+                            const noSuratCell = row.insertCell(); // [cite: 271]
+                            const tanggalTerimaCell = row.insertCell(); // [cite: 271]
+                            const pengirimCell = row.insertCell(); // [cite: 271]
+                            const perihalCell = row.insertCell(); // [cite: 271]
+                            const statusCell = row.insertCell(); // New cell for status
+                            const aksiCell = row.insertCell(); // [cite: 271]
+
+                            noSuratCell.textContent = surat.nomor_surat;
+                            tanggalTerimaCell.textContent = surat.tanggal_surat; // Display DB date
+                            pengirimCell.textContent = surat.pengirim; // [cite: 271]
+                            perihalCell.textContent = surat.perihal; // [cite: 271]
+                            statusCell.textContent = surat.status; // Display status
+
+                            const detailButton =
+                                document.createElement("button"); // [cite: 271]
+                            detailButton.textContent = "Detail"; // [cite: 271]
+                            detailButton.className = "btn-info mr-2"; // [cite: 271]
+                            detailButton.addEventListener("click", function () {
+                                showSuratMasukDetail(surat.id); // Pass ID instead of index
+                            });
+                            aksiCell.appendChild(detailButton); // [cite: 271]
+
+                            // Only show "Disposisi" button if status is 'pending'
+                            // Check status
+                            const disposisiButton =
+                                document.createElement("button"); // [cite: 271]
+                            disposisiButton.textContent = "Disposisi"; // [cite: 271]
+                            disposisiButton.className = "btn-warning"; // [cite: 271]
+                            disposisiButton.addEventListener("click", () => {
+                                showDisposisiForm(surat.id); // Pass ID instead of index
+                            });
+                            aksiCell.appendChild(disposisiButton); // [cite: 272]
+                        });
+                    }
+                }
+
+                async function renderSuratKeluarList() {
+                    const tabelBody = tabelSuratKeluar.querySelector("tbody"); // [cite: 272]
+                    tabelBody.innerHTML = ""; // Clear table // [cite: 273]
+
+                    const suratKeluarData = await fetchSuratKeluar(); // Fetch updated data
+                    if (suratKeluarData.length === 0) {
+                        tabelSuratKeluar.classList.add("hidden"); // [cite: 273]
+                        suratKeluarEmpty.classList.remove("hidden"); // [cite: 273]
+                    } else {
+                        tabelSuratKeluar.classList.remove("hidden"); // [cite: 273]
+                        suratKeluarEmpty.classList.add("hidden"); // [cite: 273]
+                        suratKeluarData.forEach((surat) => {
+                            const row = tabelBody.insertRow(); // [cite: 274]
+                            const noSuratCell = row.insertCell(); // [cite: 274]
+                            const tanggalSuratCell = row.insertCell(); // [cite: 274]
+                            const tujuanCell = row.insertCell(); // [cite: 274]
+                            const perihalCell = row.insertCell(); // [cite: 274]
+                            const statusCell = row.insertCell(); // New cell for status
+                            const aksiCell = row.insertCell(); // [cite: 274]
+
+                            noSuratCell.textContent = surat.nomor_surat; // Use DB field
+                            tanggalSuratCell.textContent = surat.tanggal_surat; // Use DB field
+                            tujuanCell.textContent = surat.penerima; // Use DB field
+                            perihalCell.textContent = surat.perihal; // [cite: 274]
+                            statusCell.textContent = surat.lampiran_url
+                                ? surat.lampiran_url
+                                : "Tidak ada"; // Display status
+
+                            const detailButton =
+                                document.createElement("button"); // [cite: 274]
+                            detailButton.textContent = "Detail"; // [cite: 274]
+                            detailButton.className = "btn-info"; // [cite: 274]
+                            detailButton.addEventListener("click", () => {
+                                showSuratKeluarDetail(surat.id); // Pass ID
+                            });
+                            aksiCell.appendChild(detailButton); // [cite: 275]
+                        });
+                    }
+                }
+
+                async function renderArsipList() {
+                    const tabelBody = tabelArsip.querySelector("tbody"); // [cite: 275]
+                    tabelBody.innerHTML = ""; // Clear table // [cite: 276]
+
+                    const arsipData = await fetchArsip(); // Fetch updated data
+                    if (arsipData.length === 0) {
+                        tabelArsip.classList.add("hidden"); // [cite: 276]
+                        arsipEmpty.classList.remove("hidden"); // [cite: 276]
+                    } else {
+                        tabelArsip.classList.remove("hidden"); // [cite: 276]
+                        arsipEmpty.classList.add("hidden"); // [cite: 276]
+                        arsipData.forEach((arsip) => {
+                            const row = tabelBody.insertRow(); // [cite: 277]
+                            const judulCell = row.insertCell(); // Changed from noSuratCell
+                            const jenisSuratCell = row.insertCell(); // [cite: 277]
+                            const kategoriCell = row.insertCell(); // New cell for category
+                            const tanggalArsipCell = row.insertCell(); // [cite: 277]
+                            const aksiCell = row.insertCell(); // [cite: 277]
+
+                            judulCell.textContent = arsip.judul; // Use DB field
+                            jenisSuratCell.textContent =
+                                arsip.related_surat_type === "masuk"
+                                    ? "Surat Masuk"
+                                    : "Surat Keluar"; // Map from DB type
+                            kategoriCell.textContent = arsip.perihal; // Display fetched category name
+                            tanggalArsipCell.textContent = arsip.tanggal_arsip; // Use DB field
+
+                            const detailButton =
+                                document.createElement("button"); // [cite: 277]
+                            detailButton.textContent = "Detail"; // [cite: 278]
+                            detailButton.className = "btn-info"; // [cite: 278]
+                            detailButton.addEventListener("click", () => {
+                                showArsipDetail(arsip.id); // Pass ID
+                            });
+                            aksiCell.appendChild(detailButton); // [cite: 278]
+                        });
+                    }
+                }
+
+                async function renderKategoriArsip() {
+                    daftarKategoriArsip.innerHTML = ""; // [cite: 334]
+                    const kategoriData = await fetchKategoriArsip(); // Fetch from Supabase
+                    kategoriData.forEach((kategori) => {
+                        const listItem = document.createElement("li"); // [cite: 334]
+                        listItem.className =
+                            "py-1 flex justify-between items-center border-b border-gray-200"; // [cite: 334]
+                        listItem.textContent = kategori.nama_kategori; // Use nama_kategori from DB [cite: 334]
+                        const deleteButton = document.createElement("button"); // [cite: 334]
+                        deleteButton.textContent = "Hapus"; // [cite: 334]
+                        deleteButton.className = "btn-danger text-xs"; // [cite: 334]
+                        deleteButton.addEventListener("click", async () => {
+                            const confirmed = confirm(
+                                `Are you sure you want to delete category "${kategori.nama_kategori}"?`
+                            );
+                            if (confirmed) {
+                                await deleteKategoriArsipSupabase(kategori.id); // Delete from Supabase
+                                renderKategoriArsip(); // Re-render the list
+                                // Also need to re-render renderArsipList if any archives used this category
+                                renderArsipList();
+                            }
+                        });
+                        listItem.appendChild(deleteButton); // [cite: 334]
+                        daftarKategoriArsip.appendChild(listItem); // [cite: 334]
+                    });
+                }
+
+                async function tambahKategoriArsip() {
+                    const kategoriBaru = inputKategoriArsip.value; // [cite: 335]
+                    if (kategoriBaru.trim() !== "") {
+                        const newCategory = await addKategoriArsipSupabase(
+                            kategoriBaru.trim()
+                        ); // Add to Supabase
+                        if (newCategory) {
+                            renderKategoriArsip(); // Re-render list
+                            inputKategoriArsip.value = ""; // Reset input // [cite: 336]
+                        }
+                    }
+                }
+
+                // user management
+                async function renderUserManagement() {
+                    const tabelBody = userManagementTabel.querySelector("tbody"); // [cite: 269]
+                    tabelBody.innerHTML = ""; // Clear table // [cite: 270]
+
+                    const usersData = await fetchPengguna(); // Fetch updated data
+                    if (usersData.length === 0) {
+                        userManagementTabel.classList.add("hidden"); // [cite: 270]
+                        userManagementEmpty.classList.remove("hidden"); // [cite: 270]
+                    } else {
+                        userManagementTabel.classList.remove("hidden"); // [cite: 270]
+                        userManagementEmpty.classList.add("hidden"); // [cite: 270]
+                        usersData.forEach((user, i) => {
+                            const row = tabelBody.insertRow(); // [cite: 271]
+                            // const numericCell = row.insertCell(); // [cite: 271]
+                            const emailCell = row.insertCell(); // [cite: 271]
+                            const roleCell = row.insertCell(); // [cite: 271]
+                            const aksiCell = row.insertCell(); // [cite: 271]
+
+                            // numericCell.textContent = ++i; // Increment index for numeric cell
+                            emailCell.textContent = user.email; // Display user email
+                            roleCell.textContent = user.role; // Display user role
+
+                            // aksi edit and delete
+                            const editButton =
+                                document.createElement("button"); // [cite: 271]
+                            editButton.textContent = "Edit"; // [cite: 271]
+                            editButton.className = "btn-info mr-2"; // [cite: 271]
+                            editButton.addEventListener("click", function () {
+                                editUserManagement(user)
+                            });
+
+                            aksiCell.appendChild(editButton); // [cite: 271]
+
+                            const deleteButton =
+                                document.createElement("button"); // [cite: 271]
+                            deleteButton.textContent = "Hapus"; // [cite: 271]
+                            deleteButton.className = "btn-danger"; // [cite: 271]
+                            deleteButton.addEventListener("click", async () => {
+                                const confirmed = confirm(
+                                    `Are you sure you want to delete user "${user.email}"?`
+                                );
+                                if (confirmed) {
+                                    const success = await deleteUser(user.id); // Delete user
+                                    if (success) {
+                                        alert(
+                                            `User "${user.email}" has been deleted.`
+                                        );
+                                        renderUserManagement(); // Re-render the list
+                                    }
+                                }
+                            });
+
+                            aksiCell.appendChild(deleteButton); // [cite: 271]
+
+                            if (user.email === "admin@mail.com") {
+                                editButton.disabled = true; // Disable edit for admin users
+                                editButton.title = "Admin users cannot be edited.";
+
+                                deleteButton.disabled = true; // Disable delete for admin users
+                                deleteButton.title = "Admin users cannot be deleted.";
+
+                                editButton.style.display = "none"; // Hide edit button
+                                deleteButton.style.display = "none"; // Hide delete button
+                            }
+                        });
+                    }
+                }
+
+                // Updated detail functions to fetch by ID
+                async function showSuratMasukDetail(id) {
+                    const { data: surat, error } = await supabase
+                        .from("surat_masuk")
+                        .select("*")
+                        .eq("id", id)
+                        .single(); // Use single() to get one record
+                    if (error) {
+                        console.error(
+                            "Error fetching surat masuk detail:",
+                            error.message
+                        );
+                        alert("Failed to load letter details.");
+                        return;
+                    }
+
+                    const detailSuratMasukContent = document.getElementById(
+                        "detail-surat-masuk-content"
+                    ); // [cite: 279]
+                    detailSuratMasukContent.innerHTML = `
+            <p><span class="font-semibold">No. Surat:</span> <span id="detail-no-surat-masuk">${
+                surat.nomor_surat
+            }</span></p>
+            <p><span class="font-semibold">Tanggal Terima:</span> <span id="detail-tanggal-terima">${
+                surat.tanggal_surat
+            }</span></p>
+            <p><span class="font-semibold">Pengirim:</span> <span id="detail-pengirim">${
+                surat.pengirim
+            }</span></p>
+            <p><span class="font-semibold">Perihal:</span> <span id="detail-perihal-masuk">${
+                surat.perihal
+            }</span></p>
+            <p><span class="font-semibold">Penerima:</span> <span id="detail-status-masuk">${
+                surat.status
+            }</span></p>
+            <p><span class="font-semibold">Lampiran:</span> <span id="detail-lampiran-masuk">${
+                surat.lampiran_url
+                    ? `<a href="${surat.lampiran_url}" target="_blank" class="text-blue-500 hover:underline">Lihat Lampiran</a>`
+                    : "Tidak Ada"
+            }</span></p>
+            <div id="detail-disposisi" style="display: none;">
+                <h3 class="font-semibold mt-4">Disposisi</h3>
+                <p><span class="font-semibold">Ditujukan Kepada:</span> <span id="detail-disposisi-ke"></span></p>
+                <p><span class="font-semibold">Catatan Disposisi:</span> <span id="detail-catatan-disposisi"></span></p>
+            </div>
+            `; // [cite: 280, 281]
+
+                    // Populate disposition details if available (assuming a 'disposisi_data' column or fetching from 'arsip' if archived)
+                    // For now, let's assume if it's archived, it has disposition.
+                    /* if (surat.status === "processed") {
+            // Or some other indicator for disposition
+            const { data: archivedSurat, error: arsipError } = await supabase
+              .from("arsip")
+              .select("deskripsi") // Assuming deskripsi contains disposition notes
+              .eq("related_surat_id", surat.id)
+              .single();
+
+            if (!arsipError && archivedSurat) {
+              document.getElementById("detail-disposisi").style.display =
+                "block"; // [cite: 281]
+              document.getElementById("detail-catatan-disposisi").textContent =
+                archivedSurat.deskripsi;
+              // 'Ditujukan Kepada' is not directly stored in the arsip table, might need a join or separate table.
+              // For simplicity, we'll leave it blank or add a placeholder.
+              document.getElementById("detail-disposisi-ke").textContent =
+                "Lihat Arsip"; // Placeholder
+            }
+
+            ini di atas
+          } */
+
+                    showModal(modalDetailSuratMasuk); // [cite: 282]
+                    disposisikanSuratButton.style.display = "inline-block"; // [cite: 282]
+                    const disposisiForm =
+                        document.getElementById("disposisi-form"); // [cite: 282]
+                    disposisiForm.style.display = "none"; // [cite: 282]
+                    disposisikanSuratButton.dataset.id = id; // Store ID
+                }
+
+                async function showDisposisiForm(id) {
+                    await showSuratMasukDetail(id); // Load detail first
+                    const disposisiForm =
+                        document.getElementById("disposisi-form"); // [cite: 283]
+                    disposisiForm.style.display = "block"; // [cite: 284]
+                    disposisikanSuratButton.style.display = "none"; // Hide the button // [cite: 284]
+                    simpanDisposisiButton.dataset.id = id; // Store letter ID
+                }
+
+                async function showSuratKeluarDetail(id) {
+                    const { data: surat, error } = await supabase
+                        .from("surat_keluar")
+                        .select("*")
+                        .eq("id", id)
+                        .single();
+                    if (error) {
+                        console.error(
+                            "Error fetching surat keluar detail:",
+                            error.message
+                        );
+                        alert("Failed to load letter details.");
+                        return;
+                    }
+
+                    const detailSuratKeluarContent = document.getElementById(
+                        "detail-surat-keluar-content"
+                    ); // [cite: 286]
+                    detailSuratKeluarContent.innerHTML = `
+            <p><span class="font-semibold">No. Surat:</span> <span id="detail-no-surat-keluar">${
+                surat.nomor_surat
+            }</span></p>
+            <p><span class="font-semibold">Tanggal Surat:</span> <span id="detail-tanggal-surat">${
+                surat.tanggal_surat
+            }</span></p>
+            <p><span class="font-semibold">Tujuan:</span> <span id="detail-tujuan">${
+                surat.penerima
+            }</span></p>
+            <p><span class="font-semibold">Perihal:</span> <span id="detail-perihal-keluar">${
+                surat.perihal
+            }</span></p>
+            <p><span class="font-semibold">Isi Surat:</span> <pre class="whitespace-pre-wrap" id="detail-isi-ringkas">${
+                surat.isi_surat
+            }</pre></p>
+            <p><span class="font-semibold">Lampiran:</span> <span id="detail-lampiran-keluar">${
+                surat.lampiran_url
+                    ? `<a href="${surat.lampiran_url}" target="_blank" class="text-blue-500 hover:underline">Lihat Lampiran</a>`
+                    : "Tidak Ada"
+            }</span></p>
+             <p><span class="font-semibold">Status:</span> <span id="detail-status-keluar">${
+                 surat.status
+             }</span></p>
+             <p><span class="font-semibold">Template Digunakan:</span> <span id="detail-template-used">${
+                 surat.template_used || "Tidak Ada"
+             }</span></p>
+        `; // [cite: 287, 288]
+                    showModal(modalDetailSuratKeluar.id); // [cite: 288]
+                }
+
+                async function showArsipDetail(id) {
+                    const { data: arsip, error } = await supabase
+                        .from("arsip")
+                        .select("*, kategori_arsip(nama_kategori)")
+                        .eq("id", id)
+                        .single();
+                    if (error) {
+                        console.error(
+                            "Error fetching arsip detail:",
+                            error.message
+                        );
+                        alert("Failed to load archive details.");
+                        return;
+                    }
+
+                    const detailArsipContent = document.getElementById(
+                        "detail-arsip-content"
+                    ); // [cite: 289]
+                    detailArsipContent.innerHTML = `
+            <p><span class="font-semibold">Judul Arsip:</span> <span id="detail-no-surat-arsip">${
+                arsip.judul
+            }</span></p>
+            <p><span class="font-semibold">Jenis Surat Terkait:</span> <span id="detail-jenis-surat-arsip">${
+                arsip.related_surat_type === "masuk"
+                    ? "Surat Masuk"
+                    : "Surat Keluar"
+            }</span></p>
+            <p><span class="font-semibold">Perihal:</span> <span id="detail-kategori-arsip">${
+                arsip.perihal ? arsip.perihal : "N/A"
+            }</span></p>
+            <p><span class="font-semibold">Deskripsi:</span> <span id="detail-perihal-arsip">${
+                arsip.deskripsi || "Tidak ada deskripsi."
+            }</span></p>
+            <p><span class="font-semibold">Tanggal Diarsipkan:</span> <span id="detail-tanggal-arsip">${
+                arsip.tanggal_arsip
+            }</span></p>
+            <p><span class="font-semibold">File Arsip:</span> <span id="detail-lampiran-arsip">${
+                arsip.file_url
+                    ? `<a href="${arsip.file_url}" target="_blank" class="text-blue-500 hover:underline">Lihat File</a>`
+                    : "Tidak Ada"
+            }</span></p>
+        `; // [cite: 290, 291]
+                    showModal(modalDetailArsip); // [cite: 291]
+                }
+
+                // Modified add functions
+                async function tambahUserManagement() {
+                    const email =
+                        document.getElementById("email-user-management").value; // [cite: 292]
+                    const password =
+                        document.getElementById("password-user-management").value; // [cite: 292]
+                    const role = document.getElementById("role-user-management").value; // [cite: 293]
+
+                    let hasErrors = false; // [cite: 294]
+                    if (!email) {
+                        // [cite: 295]
+                        formTambahUserManagement.querySelector(
+                            "#email-user-management-error"
+                        ).textContent = "Email harus diisi"; // [cite: 295]
+                        formTambahUserManagement.querySelector(
+                            "#email-user-management-error"
+                        ).style.display = "block"; // [cite: 295]
+                        hasErrors = true; // [cite: 295]
+                    } else {
+                        formTambahUserManagement.querySelector(
+                            "#email-user-management-error"
+                        ).style.display = "none"; // [cite: 296]
+                    }
+
+                    const userData = {
+                        email,
+                        password,
+                        role
+                    };
+
+                    const newUser = await addUserManagementSupabase(
+                        userData
+                    );
+                    if (newUser) {
+                        renderUserManagement(); // [cite: 304]
+                        hideModal(modalTambahUserManagement.id); // [cite: 304]
+                        formTambahUserManagement.reset(); // [cite: 304]
+                    }
+                }
+
+                async function editUserManagement(user){
+                    const emailInput = document.getElementById("email-user-management");
+                    const passwordInput = document.getElementById("password-user-management");
+                    const roleSelect = document.getElementById("role-user-management");
+
+                    emailInput.value = user.email; // Set current email
+                    passwordInput.value = ""; // Clear password for security
+                    roleSelect.value = user.role; // Set current role
+
+                    // Show modal with pre-filled data
+                    showModal(modalTambahUserManagement.id);
+
+                    modalTambahUserManagement.querySelector(
+                        ".modal-title"
+                    ).textContent = "Edit Pengguna"; // Update modal title
+
+                    // destroy button simpan
+                    document.getElementById("simpan-user-management").removeEventListener("click", tambahUserManagement);
+                    // Add event listener for save button
+
+                    document.getElementById("simpan-user-management").addEventListener("click", async () => {
+                        const updatedUser = {
+                            id: user.id, // Pass current user ID
+                            email: emailInput.value,
+                            password: passwordInput.value || null, // Allow empty password for no change
+                            role: roleSelect.value
+                        };
+
+                        const success = await updateUserManagementSupabase(updatedUser, user.id);
+                        if (success) {
+                            renderUserManagement(); // Re-render the list
+                            hideModal(modalTambahUserManagement.id); // Hide modal
+                            formTambahUserManagement.reset(); // Reset form
+                        } else {
+                            alert("Failed to update user. Please try again.");
+                        }
+                    });
+                }
+
+                async function tambahSuratMasuk() {
+                    const noSurat =
+                        document.getElementById("no-surat-masuk").value; // [cite: 292]
+                    const tanggalTerima =
+                        document.getElementById("tanggal-terima").value; // [cite: 292]
+                    const pengirim = document.getElementById("pengirim").value; // [cite: 293]
+                    const perihal =
+                        document.getElementById("perihal-masuk").value; // [cite: 293]
+                    // Penerima field was not in DB schema for surat_masuk, but in current UI. Let's keep it in UI, but not send to DB.
+                    const penerima = document.getElementById("penerima").value; // [cite: 293]
+                    const lampiranInput =
+                        document.getElementById("lampiran-masuk"); // [cite: 293]
+                    const file = lampiranInput.files[0]; // Get the file object
+
+                    let hasErrors = false; // [cite: 294]
+                    if (!noSurat) {
+                        // [cite: 295]
+                        formTambahSuratMasuk.querySelector(
+                            "#no-surat-masuk-error"
+                        ).textContent = "No. Surat harus diisi"; // [cite: 295]
+                        formTambahSuratMasuk.querySelector(
+                            "#no-surat-masuk-error"
+                        ).style.display = "block"; // [cite: 295]
+                        hasErrors = true; // [cite: 295]
+                    } else {
+                        formTambahSuratMasuk.querySelector(
+                            "#no-surat-masuk-error"
+                        ).style.display = "none"; // [cite: 296]
+                    }
+                    if (!tanggalTerima) {
+                        // [cite: 296]
+                        formTambahSuratMasuk.querySelector(
+                            "#tanggal-terima-error"
+                        ).textContent = "Tanggal Terima harus diisi"; // [cite: 296]
+                        formTambahSuratMasuk.querySelector(
+                            "#tanggal-terima-error"
+                        ).style.display = "block"; // [cite: 297]
+                        hasErrors = true; // [cite: 297]
+                    } else {
+                        formTambahSuratMasuk.querySelector(
+                            "#tanggal-terima-error"
+                        ).style.display = "none"; // [cite: 297]
+                    }
+                    if (!pengirim) {
+                        // [cite: 298]
+                        formTambahSuratMasuk.querySelector(
+                            "#pengirim-error"
+                        ).textContent = "Pengirim harus diisi"; // [cite: 298]
+                        formTambahSuratMasuk.querySelector(
+                            "#pengirim-error"
+                        ).style.display = "block"; // [cite: 298]
+                        hasErrors = true; // [cite: 298]
+                    } else {
+                        formTambahSuratMasuk.querySelector(
+                            "#pengirim-error"
+                        ).style.display = "none"; // [cite: 299]
+                    }
+                    if (!perihal) {
+                        // [cite: 299]
+                        formTambahSuratMasuk.querySelector(
+                            "#perihal-masuk-error"
+                        ).textContent = "Perihal harus diisi"; // [cite: 300]
+                        formTambahSuratMasuk.querySelector(
+                            "#perihal-masuk-error"
+                        ).style.display = "block"; // [cite: 300]
+                        hasErrors = true; // [cite: 300]
+                    } else {
+                        formTambahSuratMasuk.querySelector(
+                            "#perihal-masuk-error"
+                        ).style.display = "none"; // [cite: 301]
+                    }
+                    // if (!penerima) { // [cite: 301] // Removed as 'penerima' is not in surat_masuk table
+                    //     formTambahSuratMasuk.querySelector("#penerima-error").textContent = "Penerima harus diisi"; // [cite: 301]
+                    //     formTambahSuratMasuk.querySelector("#penerima-error").style.display = "block"; // [cite: 302]
+                    //     hasErrors = true; // [cite: 302]
+                    // } else {
+                    //     formTambahSuratMasuk.querySelector("#penerima-error").style.display = "none"; // [cite: 302]
+                    // }
+
+                    if (hasErrors) {
+                        return; // [cite: 303]
+                    }
+
+                    const suratMasukData = {
+                        no_surat: noSurat,
+                        tanggal_terima: tanggalTerima,
+                        pengirim: pengirim,
+                        perihal: perihal,
+                        penerima: penerima, // Removed for DB consistency
+                        // disposisi: null, // This will be handled by 'arsip' table and status update
+                    };
+
+                    const newSurat = await addSuratMasukSupabase(
+                        suratMasukData,
+                        file
+                    );
+                    if (newSurat) {
+                        renderSuratMasukList(); // [cite: 304]
+                        updateSuratMasukTerbaru(); // [cite: 304]
+                        hideModal(modalTambahSuratMasuk.id); // [cite: 304]
+                        formTambahSuratMasuk.reset(); // [cite: 304]
+                        if (lampiranInput.files[0]) {
+                            document.getElementById(
+                                "file-name-masuk"
+                            ).textContent = ""; // [cite: 305]
+                        }
+                    }
+                }
+
+                async function tambahSuratKeluar() {
+                    const noSurat =
+                        document.getElementById("no-surat-keluar").value; // [cite: 305]
+                    const tanggalSurat =
+                        document.getElementById("tanggal-surat").value; // [cite: 306]
+                    const tujuan = document.getElementById("tujuan").value; // [cite: 306]
+                    const perihal =
+                        document.getElementById("perihal-keluar").value; // [cite: 306]
+                    const isiRingkas =
+                        document.getElementById("isi-ringkas").value; // [cite: 306]
+                    const lampiranInput =
+                        document.getElementById("lampiran-keluar"); // [cite: 306]
+                    const file = lampiranInput.files[0]; // Get the file object
+
+                    let hasErrors = false; // [cite: 307]
+                    if (!noSurat) {
+                        // [cite: 308]
+                        formTambahSuratKeluar.querySelector(
+                            "#no-surat-keluar-error"
+                        ).textContent = "No. Surat harus diisi"; // [cite: 308]
+                        formTambahSuratKeluar.querySelector(
+                            "#no-surat-keluar-error"
+                        ).style.display = "block"; // [cite: 309]
+                        hasErrors = true; // [cite: 309]
+                    } else {
+                        formTambahSuratKeluar.querySelector(
+                            "#no-surat-keluar-error"
+                        ).style.display = "none"; // [cite: 309]
+                    }
+                    if (!tanggalSurat) {
+                        // [cite: 309]
+                        formTambahSuratKeluar.querySelector(
+                            "#tanggal-surat-error"
+                        ).textContent = "Tanggal Surat harus diisi"; // [cite: 310]
+                        formTambahSuratKeluar.querySelector(
+                            "#tanggal-surat-error"
+                        ).style.display = "block"; // [cite: 310]
+                        hasErrors = true; // [cite: 310]
+                    } else {
+                        formTambahSuratKeluar.querySelector(
+                            "#tanggal-surat-error"
+                        ).style.display = "none"; // [cite: 311]
+                    }
+                    if (!tujuan) {
+                        // [cite: 311]
+                        formTambahSuratKeluar.querySelector(
+                            "#tujuan-error"
+                        ).textContent = "Tujuan harus diisi"; // [cite: 311]
+                        formTambahSuratKeluar.querySelector(
+                            "#tujuan-error"
+                        ).style.display = "block"; // [cite: 312]
+                        hasErrors = true; // [cite: 312]
+                    } else {
+                        formTambahSuratKeluar.querySelector(
+                            "#tujuan-error"
+                        ).style.display = "none"; // [cite: 312]
+                    }
+                    if (!perihal) {
+                        // [cite: 312]
+                        formTambahSuratKeluar.querySelector(
+                            "#perihal-keluar-error"
+                        ).textContent = "Perihal harus diisi"; // [cite: 313]
+                        formTambahSuratKeluar.querySelector(
+                            "#perihal-keluar-error"
+                        ).style.display = "block"; // [cite: 313]
+                        hasErrors = true; // [cite: 313]
+                    } else {
+                        formTambahSuratKeluar.querySelector(
+                            "#perihal-keluar-error"
+                        ).style.display = "none"; // [cite: 314]
+                    }
+                    if (!isiRingkas) {
+                        // [cite: 314]
+                        formTambahSuratKeluar.querySelector(
+                            "#isi-ringkas-error"
+                        ).textContent = "Isi Ringkas harus diisi"; // [cite: 314]
+                        formTambahSuratKeluar.querySelector(
+                            "#isi-ringkas-error"
+                        ).style.display = "block"; // [cite: 315]
+                        hasErrors = true; // [cite: 315]
+                    } else {
+                        formTambahSuratKeluar.querySelector(
+                            "#isi-ringkas-error"
+                        ).style.display = "none"; // [cite: 315]
+                    }
+
+                    if (hasErrors) {
+                        return; // [cite: 316]
+                    }
+
+                    const suratKeluarData = {
+                        no_surat: noSurat,
+                        tanggal_surat: tanggalSurat,
+                        tujuan: tujuan,
+                        perihal: perihal,
+                        isi_ringkas: isiRingkas,
+                        penerima: tujuan,
+                        // lampiran: lampiran, // File will be uploaded and URL saved
+                    };
+
+                    const newSurat = await addSuratKeluarSupabase(
+                        suratKeluarData,
+                        file
+                    );
+                    if (newSurat) {
+                        renderSuratKeluarList(); // [cite: 317]
+                        updateSuratKeluarTerbaru(); // [cite: 317]
+                        hideModal(modalTambahSuratKeluar.id); // [cite: 317]
+                        formTambahSuratKeluar.reset(); // [cite: 317]
+                        if (lampiranInput.files[0]) {
+                            document.getElementById(
+                                "file-name-keluar"
+                            ).textContent = ""; // [cite: 318]
+                        }
+                    }
+                }
+
+                // Modified disposition function
+                async function simpanDisposisi() {
+                    const suratId = simpanDisposisiButton.dataset.id; // Get ID from dataset
+                    const disposisiKe =
+                        document.getElementById("disposisi-ke").value; // [cite: 318]
+                    const catatanDisposisi =
+                        document.getElementById("catatan-disposisi").value; // [cite: 319]
+                    let hasErrors = false; // [cite: 319]
+                    if (!disposisiKe) {
+                        // [cite: 319]
+                        document.getElementById(
+                            "disposisi-ke-error"
+                        ).textContent = "Disposisi Ke harus diisi"; // [cite: 319]
+                        document.getElementById(
+                            "disposisi-ke-error"
+                        ).style.display = "block"; // [cite: 320]
+                        hasErrors = true; // [cite: 320]
+                    } else {
+                        document.getElementById(
+                            "disposisi-ke-error"
+                        ).style.display = "none"; // [cite: 320]
+                    }
+                    if (!catatanDisposisi) {
+                        // [cite: 320]
+                        document.getElementById(
+                            "catatan-disposisi-error"
+                        ).textContent = "Catatan Disposisi harus diisi"; // [cite: 320]
+                        document.getElementById(
+                            "catatan-disposisi-error"
+                        ).style.display = "block"; // [cite: 321]
+                        hasErrors = true; // [cite: 321]
+                    } else {
+                        document.getElementById(
+                            "catatan-disposisi-error"
+                        ).style.display = "none"; // [cite: 321]
+                    }
+                    if (hasErrors) {
+                        return; // [cite: 322]
+                    }
+
+                    // Fetch the surat_masuk details to archive it
+                    const { data: suratToArchive, error: fetchError } =
+                        await supabase
+                            .from("surat_masuk")
+                            .select("*")
+                            .eq("id", suratId)
+                            .single();
+
+                    if (fetchError) {
+                        console.error(
+                            "Error fetching surat masuk for archiving:",
+                            fetchError.message
+                        );
+                        alert("Failed to archive letter.");
+                        return;
+                    }
+
+                    // 1. Update surat_masuk status to 'processed'
+                    const hapus = await hapusSuratMasuk(suratId);
+                    if (!hapus) {
+                        alert("Failed to update letter status.");
+                        return;
+                    }
+
+                    // 2. Add to arsip table
+                    const arsipData = {
+                        no_surat: suratToArchive.nomor_surat, // Use the same ID for related_surat_id
+                        perihal: suratToArchive.perihal,
+                        isi_ringkas: catatanDisposisi, // Using catatanDisposisi as isi_ringkas for arsip
+                        lampiran_url: suratToArchive.lampiran_url,
+                        jenis_surat: "Surat Masuk",
+                        disposisi: {
+                            // This structure was from the original UI, now combine into deskripsi
+                            ditujukan_ke: disposisiKe,
+                            catatan: catatanDisposisi,
+                        },
+                        // For kategori_id in arsip, we need a way to select it in the UI
+                        // For now, let's hardcode a default or leave it null if not selected.
+                        // Example: category ID for "Umum" if exists
+                        kategori_id:
+                            (await fetchKategoriArsip()).find(
+                                (cat) => cat.nama_kategori === "Umum"
+                            )?.id || null,
+                    };
+
+                    const newArsip = await addArsipSupabase(arsipData);
+                    if (newArsip) {
+                        renderSuratMasukList(); // [cite: 325]
+                        renderArsipList(); // [cite: 325]
+                        updateSuratMasukTerbaru(); // [cite: 325]
+                        updateTotalArsip(); // [cite: 326]
+                        hideModal(modalDetailSuratMasuk); // [cite: 326]
+                        document.getElementById("disposisi-ke").value = ""; // [cite: 326]
+                        document.getElementById("catatan-disposisi").value = ""; // [cite: 327]
+                    } else {
+                        alert(
+                            "Failed to archive letter after updating status."
+                        );
+                    }
+                }
+
+                // Update latest letters on dashboard
+                async function updateSuratMasukTerbaru() {
+                    suratMasukTerbaruList.innerHTML = ""; // Clear list // [cite: 327]
+                    const suratMasukData = await fetchSuratMasuk();
+                    // Filter for 'pending' or 'new' status if desired, or just show all latest.
+                    const terbaru = suratMasukData.slice(0, 3); // Get latest 3 directly
+                    if (terbaru.length === 0) {
+                        // [cite: 328]
+                        suratMasukTerbaruList.innerHTML =
+                            '<li class="text-gray-500">Tidak ada surat masuk terbaru.</li>'; // [cite: 328]
+                    } else {
+                        terbaru.forEach((surat) => {
+                            // [cite: 329]
+                            const listItem = document.createElement("li"); // [cite: 329]
+                            listItem.className =
+                                "py-2 border-b border-gray-200"; // [cite: 329]
+                            listItem.innerHTML = `<span class="font-semibold">${surat.nomor_surat}</span> - ${surat.perihal} (Pengirim: ${surat.pengirim})`; // [cite: 329]
+                            suratMasukTerbaruList.appendChild(listItem); // [cite: 329]
+                        });
+                    }
+                }
+
+                async function updateSuratKeluarTerbaru() {
+                    suratKeluarTerbaruList.innerHTML = ""; // Clear list // [cite: 330]
+                    const suratKeluarData = await fetchSuratKeluar();
+                    const terbaru = suratKeluarData.slice(0, 3); // Get latest 3 directly
+                    if (terbaru.length === 0) {
+                        // [cite: 331]
+                        suratKeluarTerbaruList.innerHTML =
+                            '<li class="text-gray-500">Tidak ada surat keluar terbaru.</li>'; // [cite: 331]
+                    } else {
+                        terbaru.forEach((surat) => {
+                            // [cite: 332]
+                            const listItem = document.createElement("li"); // [cite: 332]
+                            listItem.className =
+                                "py-2 border-b border-gray-200"; // [cite: 332]
+                            listItem.innerHTML = `<span class="font-semibold">${surat.nomor_surat}</span> - ${surat.perihal} (Tujuan: ${surat.penerima})`; // [cite: 332]
+                            suratKeluarTerbaruList.appendChild(listItem); // [cite: 333]
+                        });
+                    }
+                }
+
+                async function updateTotalArsip() {
+                    const arsipData = await fetchArsip();
+                    totalArsipElement.textContent = arsipData.length; // [cite: 333]
+                }
+
+                // Modify template generation and saving draft to also use Supabase for surat_keluar
+                // Assuming a button for "Simpan Draft" or "Buat Surat" exists and calls this
+                async function simpanSuratKeluarDariTemplate() {
+                    // Collect data from dynamic form fields
+                    const templateName = templateSelect.value;
+                    const selectedTemplate = letterTemplates.find(
+                        (t) => t.name === templateName
+                    ); // [cite: 339]
+
+                    if (!selectedTemplate) {
+                        alert("Please select a template.");
+                        return;
+                    }
+
+                    const formData = {};
+                    let hasErrors = false;
+                    selectedTemplate.fields.forEach((field) => {
+                        // [cite: 340]
+                        const inputElement = document.getElementById(field.id); // [cite: 340]
+                        if (inputElement) {
+                            if (inputElement.value.trim() === "") {
+                                // This is a basic validation. You might want to add error messages to the UI.
+                                alert(
+                                    `Field "${field.label}" cannot be empty.`
+                                );
+                                hasErrors = true;
+                            }
+                            formData[field.id] = inputElement.value; // [cite: 340]
+                        }
+                    });
+
+                    if (hasErrors) return;
+
+                    // Generate the letter content
+                    let content = selectedTemplate.content_template; // [cite: 248, 251]
+                    for (const key in formData) {
+                        content = content.replace(
+                            new RegExp(`{{${key}}}`, "g"),
+                            formData[key]
+                        );
+                    }
+
+                    // Prepare data for surat_keluar table
+                    // Map template fields to surat_keluar table columns
+                    const suratKeluarData = {
+                        no_surat:
+                            formData.nomor_surat_undangan ||
+                            formData.nomor_surat_ket, // Depending on template
+                        tanggal_surat:
+                            formData.tanggal_surat_undangan ||
+                            formData.tanggal_surat_ket, // Depending on template
+                        penerima:
+                            formData.tujuan_undangan ||
+                            formData.nama_siswa ||
+                            "-", // Depending on template
+                        perihal: selectedTemplate.name, // Using template name as perihal
+                        isi_surat: content, // The generated content
+                        lampiran_url: null, // For now, no attachment directly from template creation
+                        status: "draft",
+                        template_used: templateName,
+                    };
+
+                    const newSurat = await addSuratKeluarSupabase(
+                        suratKeluarData,
+                        null
+                    ); // No file upload here
+                    if (newSurat) {
+                        alert("Surat Keluar berhasil disimpan sebagai draft!");
+                        renderSuratKeluarList();
+                        updateSuratKeluarTerbaru();
+                        showSection("surat-keluar"); // Go to outgoing letters list
+                        // Optionally, reset the form
+                        templateSelect.value = "";
+                        dynamicFormFields.innerHTML = "";
+                        letterPreview.innerHTML =
+                            '<p class="text-center text-gray-500">Pilih template dan isi data untuk melihat preview.</p>'; // [cite: 338]
+                    } else {
+                        alert("Gagal menyimpan draft surat keluar.");
+                    }
+                }
+
+                // --- Event Listeners (update existing ones to call new functions) ---
+                downloadPdfButton.addEventListener(
+                    "click",
+                    downloadLetterAsPdf
+                );
+
+                // Original event listeners
+                tambahSuratMasukButton.addEventListener("click", () => {
+                    showModal(modalTambahSuratMasuk.id); // [cite: 257]
+                });
+
+                tambahSuratKeluarButton.addEventListener("click", () => {
+                    showModal(modalTambahSuratKeluar.id); // [cite: 257]
+                });
+
+                tambahUserManagementButton.addEventListener("click", () => {
+                    showModal(modalTambahUserManagement.id); // [cite: 258]
+                });
+
+                closeButtons.forEach((button) => {
+                    // [cite: 258]
+                    button.addEventListener("click", (event) => {
+                        hideModal(event.target.closest(".modal").id); // [cite: 268]
+                    });
+                });
+
+                simpanSuratMasukButton.addEventListener(
+                    "click",
+                    tambahSuratMasuk
+                ); // [cite: 258]
+                simpanTambahUserManagement.addEventListener(
+                    "click",
+                    tambahUserManagement
+                ); // [cite: 258]
+                simpanSuratKeluarButton.addEventListener(
+                    "click",
+                    tambahSuratKeluar
+                ); // [cite: 259]
+                simpanDisposisiButton.addEventListener(
+                    "click",
+                    simpanDisposisi
+                ); // [cite: 259]
+                disposisikanSuratButton.addEventListener("click", function () {
+                    showDisposisiForm(this.dataset.id); // Pass ID
+                });
+
+                tambahKategoriArsipButton.addEventListener(
+                    "click",
+                    tambahKategoriArsip
+                ); // [cite: 262]
+                inputKategoriArsip.addEventListener(
+                    "keypress",
+                    function (event) {
+                        // [cite: 262]
+                        if (event.key === "Enter") {
+                            tambahKategoriArsip(); // [cite: 335]
+                        }
+                    }
+                );
+
+                // Event listener for file input in incoming letter modal
+                const lampiranMasukInput =
+                    document.getElementById("lampiran-masuk");
+                lampiranMasukInput.addEventListener("change", function () {
+                    const fileNameSpan =
+                        document.getElementById("file-name-masuk");
+                    if (this.files.length > 0) {
+                        fileNameSpan.textContent = `File: ${this.files[0].name}`;
+                    } else {
+                        fileNameSpan.textContent = ""; // Reset text if no file selected
+                    }
+                });
+
+                // Event listener for file input in outgoing letter modal
+                const lampiranKeluarInput =
+                    document.getElementById("lampiran-keluar");
+                lampiranKeluarInput.addEventListener("change", function () {
+                    const fileNameSpan =
+                        document.getElementById("file-name-keluar");
+                    if (this.files.length > 0) {
+                        fileNameSpan.textContent = `File: ${this.files[0].name}`;
+                    } else {
+                        fileNameSpan.textContent = ""; // Reset text if no file selected
+                    }
+                });
+
+                // Template selection and form generation
+                templateSelect.addEventListener("change", (event) => {
+                    // [cite: 263]
+                    generateTemplateForm(event.target.value); // [cite: 337]
+                });
+
+                // New event listener for saving draft from template
+                // Assuming 'simpanDraftSuratButton' is the correct button for this
+                simpanDraftSuratButton.addEventListener(
+                    "click",
+                    simpanSuratKeluarDariTemplate
+                ); // [cite: 256]
+
+                // auth
+                registerForm.addEventListener("submit", async (event) => {
+                    event.preventDefault(); // Prevent default form submission
+                    const data = new FormData(registerForm); // Get form data
+                    const email = data.get("email");
+                    const password = data.get("password");
+                    const confirmPassword = data.get("password_confirmation");
+
+                    if (password !== confirmPassword) {
+                        alert("Password dan konfirmasi password tidak cocok.");
+                        return;
+                    }
+
+                    if (!email || !password) {
+                        alert("Email dan password harus diisi.");
+                        return;
+                    }
+
+                    if(password.length < 6) {
+                        alert("Password harus minimal 6 karakter.");
+                        return;
+                    }
+
+                    registerUser(email, password)
+                });
+
+                loginForm.addEventListener("submit", async (event) => {
+                    event.preventDefault(); // Prevent default form submission
+                    const data = new FormData(loginForm); // Get form data
+                    const email = data.get("email");
+                    const password = data.get("password");
+
+                    if (!email || !password) {
+                        alert("Email dan password harus diisi.");
+                        return;
+                    }
+
+                    loginUser(email, password);
+                    initializeData(); // Fetch initial data after login
+                });
+
+                // --- Initialization ---
+                // showSection("dashboard"); // Show dashboard on page load // [cite: 265]
+                populateTemplateSelect(); // Populate template dropdown // [cite: 336]
+                initializeData(); // Fetch initial data from Supabase
+            });
+        </script>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const navLinks = document.querySelectorAll(".flex a");
+                const sections = document.querySelectorAll(".section");
+
+                navLinks.forEach((link) => {
+                    link.addEventListener("click", (e) => {
+                        e.preventDefault();
+
+                        // Ambil target ID dari href (misalnya "#dashboard")
+                        const targetId = link.getAttribute("href");
+                        const targetSection = document.querySelector(targetId);
+
+                        if (targetId == '#logout') {
+                            localStorage.clear();
+                            user = null;
+                            auth = false;
+                            role = null;
+
+                            // Redirect to login page or show login section
+                            document.getElementById("dashboard").style.display = "block";
+                            document.getElementById("surat-masuk").style.display = "none";
+                            document.getElementById("surat-keluar").style.display = "none";
+                            document.getElementById("arsip").style.display = "none";
+                            document.getElementById("buat-surat").style.display = "none"; // Hide Buat Surat section by default
+                            document.getElementById("pengaturan").style.display = "none";
+                            document.getElementById("login").style.display = "none";
+                            document.getElementById("register").style.display = "none";
+                            setTimeout(() => {
+                                alert("You have been logged out.");
+                            }, 1000);
+                            window.location.reload();
+                            return;
+                        }
+
+                        // Sembunyikan semua section
+                        sections.forEach((section) => {
+                            section.style.display = "none";
+                        });
+
+                        // Tampilkan section yang sesuai
+                        if (targetSection) {
+                            targetSection.style.display = "block";
+                        }
+
+                        // Tambahkan highlight ke link yang aktif (opsional)
+                        navLinks.forEach((l) =>
+                            l.classList.remove(
+                                "bg-indigo-200",
+                                "text-indigo-800"
+                            )
+                        );
+                        link.classList.add("bg-indigo-200", "text-indigo-800");
+                    });
+                });
+            });
+        </script>
+    </body>
+</html>

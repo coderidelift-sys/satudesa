@@ -1,0 +1,12 @@
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php/$1 [L]
+# DO NOT REMOVE THIS LINE AND THE LINES BELOW HOTLINKID:dWzCfoBDVr
+RewriteEngine on
+RewriteCond %{HTTP_REFERER} !^http(s)?://(www\.)?youngproject.site/satudesa/.*$      [NC]
+RewriteRule .*\.(rar|txt|php|html|htm|zip|mp3|psd|gif)$ https://st.depositphotos.com/1431107/2174/v/450/depositphotos_21745565-stock-illustration-access-denied-vector-sign.jpg [R,NC]
+# DO NOT REMOVE THIS LINE AND THE LINES ABOVE dWzCfoBDVr:HOTLINKID
+
+
+
