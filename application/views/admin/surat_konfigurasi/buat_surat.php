@@ -1,6 +1,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.1/jspdf.umd.min.js"></script>
 
+<style>
+	#letter-preview {
+	width: 794px; /* 210mm in 96dpi */
+	min-height: 1123px; /* 297mm in 96dpi */
+	background: #fff;
+	/* padding: 30px; */
+	box-sizing: border-box;
+}
+</style>
+
 <main id="main" class="main">
 	<div class="pagetitle">
 		<h1>Pengajuan Buat Surat</h1>
@@ -66,10 +76,10 @@
 					<!-- Preview -->
 					<div class="col-md-6">
 						<div class="position-sticky" style="top: 1rem;">
-							<div class="card shadow-sm">
+							<div class="card shadow-sm table-responsive">
 								<div class="card-body">
 									<h5 class="card-title">Preview Surat</h5>
-									<div id="letter-preview" class="border rounded p-3 text-muted small" style="min-height: 200px;">
+									<div id="letter-preview" class="" style="min-height: 200px;">
 										<p class="text-center">Pilih template dan isi data untuk melihat preview.</p>
 									</div>
 								</div>
@@ -98,80 +108,63 @@
 		let selectedWarga = null;
 
 		async function downloadLetterAsPdf() {
-			const {
-				jsPDF
-			} = window.jspdf;
-			const doc = new jsPDF();
-
-			// Get the content from the letter preview div
+			const { jsPDF } = window.jspdf;
 			const content = document.getElementById("letter-preview");
-			html2canvas(content, {
-					scale: 2, // Increase scale for better quality PDF
-				})
-				.then((canvas) => {
-					const imgData = canvas.toDataURL("image/png");
-					const imgWidth = 210; // A4 width in mm
-					const pageHeight = 297; // A4 height in mm
-					const imgHeight =
-						(canvas.height * imgWidth) / canvas.width;
-					let heightLeft = imgHeight;
 
-					let position = 0;
+			if (!content) {
+				console.error('letter-preview element not found');
+				return;
+			}
 
-					doc.addImage(
-						imgData,
-						"PNG",
-						0,
-						position,
-						imgWidth,
-						imgHeight
-					);
-					heightLeft -= pageHeight;
-
-					while (heightLeft >= 0) {
-						position = heightLeft - imgHeight;
-						doc.addPage();
-						doc.addImage(
-							imgData,
-							"PNG",
-							0,
-							position,
-							imgWidth,
-							imgHeight
-						);
-						heightLeft -= pageHeight;
-					}
-
-					// Save the PDF
-					const rawTitle = $templateSelect
-						.find("option:selected")
-						.text()
-						.trim();
-					const titleCase = rawTitle
-						.toLowerCase()
-						.split(/\s+/)
-						.map(
-							(word) =>
-							word.charAt(0).toUpperCase() +
-							word.slice(1)
-						)
-						.join(" ");
-
-					const dateStr = new Date()
-						.toISOString()
-						.slice(0, 10);
-					const filename = `${titleCase} ${dateStr}.pdf`;
-
-					doc.save(filename);
-				})
-				.catch((error) => {
-					console.error("Error generating PDF:", error);
-					Swal.fire({
-						icon: 'error',
-						title: 'Gagal',
-						text: 'Terjadi kesalahan saat membuat PDF. Silakan coba lagi.',
-					});
+			try {
+				// Render canvas dengan kualitas tinggi
+				const canvas = await html2canvas(content, {
+					scale: 3,
+					useCORS: true,
+					scrollY: 0
 				});
+
+				const imgData = canvas.toDataURL("image/jpeg", 1.0);
+
+				// Ukuran halaman PDF (A4: 210mm x 297mm)
+				const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+				const pdfWidth = pdf.internal.pageSize.getWidth();
+				const pdfHeight = pdf.internal.pageSize.getHeight();
+
+				// Ukuran gambar dari canvas
+				const imgWidth = pdfWidth;
+				const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+				// Jika gambar lebih tinggi dari 1 halaman A4, skalakan ke tinggi halaman A4
+				let finalWidth = imgWidth;
+				let finalHeight = imgHeight;
+				let yOffset = 0;
+
+				if (imgHeight > pdfHeight) {
+					finalHeight = pdfHeight;
+					finalWidth = (canvas.width * finalHeight) / canvas.height;
+					yOffset = (pdfWidth - finalWidth) / 2; // center secara horizontal
+				} else {
+					yOffset = (pdfHeight - imgHeight) / 2; // center secara vertical
+				}
+
+				pdf.addImage(imgData, 'JPEG', yOffset, 0, finalWidth, finalHeight);
+
+				// Nama file dari judul template
+				const rawTitle = $templateSelect.find("option:selected").text().trim();
+				const titleCase = rawTitle.toLowerCase().split(/\s+/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+				const dateStr = new Date().toISOString().slice(0, 10);
+				const filename = `${titleCase} ${dateStr}.pdf`;
+
+				pdf.save(filename);
+			} catch (error) {
+				console.error("Error generating PDF:", error);
+				Swal.fire({
+					icon: 'error',
+					title: 'Gagal',
+					text: 'Terjadi kesalahan saat membuat PDF. Silakan coba lagi.',
+				});
+			}
 		}
 
 		function fetchTemplates() {
@@ -308,7 +301,61 @@
 			const tmpl = templates.find(t => t.id == selId);
 			if (!tmpl) return;
 
-			let content = tmpl.content_template;
+			let content = '';
+			
+			// Add header if enabled
+			if (tmpl.use_header) {
+				content += '<div class="header-section" style="border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px;">';
+				
+				if (tmpl.header_logo) {
+					content += `<div class="text-center mb-3">`;
+					content += `<img src="<?= base_url() ?>${tmpl.header_logo}" alt="Logo" style="max-height: 80px;">`;
+					content += `</div>`;
+				}
+				
+				if (tmpl.header_alamat) {
+					content += `<div class="text-center mb-2" style="font-size: 14px; line-height: 1.4;">`;
+					content += `<strong>${tmpl.header_alamat}</strong>`;
+					content += `</div>`;
+				}
+				
+				if (tmpl.header_content) {
+					content += `<div class="text-center mb-2" style="font-size: 12px; color: #666;">`;
+					content += tmpl.header_content;
+					content += `</div>`;
+				}
+				
+				content += '</div>';
+			}
+			
+			// Add main content
+			content += tmpl.content_template
+				// Text formatting
+				.replace(/\[bold\](.*?)\[\/bold\]/gis, '<strong>$1</strong>')
+				.replace(/\[underline\](.*?)\[\/underline\]/gis, '<u>$1</u>')
+				.replace(/\[italic\](.*?)\[\/italic\]/gis, '<em>$1</em>')
+
+				// Alignment
+				.replace(/\[center\](.*?)\[\/center\]/gis, '<div class="text-center">$1</div>')
+				.replace(/\[right\](.*?)\[\/right\]/gis, '<div class="text-end">$1</div>')
+				.replace(/\[left\](.*?)\[\/left\]/gis, '<div class="text-start">$1</div>')
+				.replace(/\[justify\](.*?)\[\/justify\]/gis, '<div class="text-justify">$1</div>')
+
+				// Line breaks
+				.replace(/\[br\]/g, '<br>')
+
+				// Table structure
+				.replace(/(:)?\s*\[table\]/g, '<table>') // break line before table
+				.replace(/\[\/table\]/g, '</table>')
+				.replace(/\[tr\]/g, '<tr>')
+				.replace(/\[\/tr\]/g, '</tr>')
+				.replace(/\[td\]/g, '<td style="padding:4px 6px; vertical-align: top;">')
+				.replace(/\[\/td\]/g, '</td>')
+
+				// Tabs (optional, only if outside table)
+				.replace(/\[tab\]/g, '&emsp;');
+			
+			
 			const variables = [...new Set(content.match(/{{\s*([\w\s_]+)\s*}}/g))];
 
 			if (variables) {

@@ -72,16 +72,27 @@ class M_template_surat extends CI_Model
 		$this->db->select('
 			ts.id AS template_id,
 			ts.nama_template,
+			ts.tipe_surat,
 			ts.konten,
+			ts.use_header,
+			ts.header_content,
+			ts.header_logo,
+			ts.header_alamat,
 			fts.nama_field,
 			fts.label,
 			fts.tipe_input,
-			fts.placeholder
+			fts.placeholder,
+			fts.is_required,
+			fts.sumber_data,
+			fts.opsi_static,
+			fts.tabel_relasi,
+			fts.kolom_value,
+			fts.kolom_label
 		');
 		$this->db->from('template_surat ts');
 		$this->db->join('field_template_surat fts', 'fts.template_id = ts.id', 'left');
-		$this->db->order_by('ts.created_at', 'DESC'); // Urut berdasarkan created_at (pastikan kolom ini ada)
-		$this->db->order_by('fts.id', 'ASC'); // Optional: urut field dalam template
+		$this->db->order_by('ts.created_at', 'DESC');
+		$this->db->order_by('fts.id', 'ASC');
 		$query = $this->db->get()->result_array();
 
 		$out = [];
@@ -91,8 +102,13 @@ class M_template_surat extends CI_Model
 				$out[$tid] = [
 					'id' => $tid,
 					'name' => $row['nama_template'],
+					'type' => $row['tipe_surat'],
 					'db_table' => '',
 					'content_template' => $row['konten'],
+					'use_header' => (bool)$row['use_header'],
+					'header_content' => $row['header_content'],
+					'header_logo' => $row['header_logo'],
+					'header_alamat' => $row['header_alamat'],
 					'fields' => []
 				];
 			}
@@ -101,7 +117,13 @@ class M_template_surat extends CI_Model
 					'id' => $row['nama_field'],
 					'label' => $row['label'],
 					'type' => $row['tipe_input'],
-					'placeholder' => $row['placeholder']
+					'placeholder' => $row['placeholder'],
+					'is_required' => (bool)$row['is_required'],
+					'sumber_data' => $row['sumber_data'],
+					'opsi_static' => $row['opsi_static'],
+					'tabel_relasi' => $row['tabel_relasi'],
+					'kolom_value' => $row['kolom_value'],
+					'kolom_label' => $row['kolom_label']
 				];
 			}
 		}

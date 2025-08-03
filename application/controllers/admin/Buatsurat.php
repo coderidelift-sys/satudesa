@@ -1,23 +1,21 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
-require APPPATH . '../vendor/autoload.php'; // Sesuaikan path jika vendor berada di root
 
 class Buatsurat extends CI_Controller
 {
 	public function __construct()
 	{
 		parent::__construct();
-		$this->load->model('M_all'); // Load the model
-		$this->load->library('upload'); // Load the upload library
-		$this->load->model('Model_warga'); // Load the model
-		$this->load->model('M_template_surat'); // Load the template surat model
-		$this->load->helper('indo_helper');
-		$this->load->helper('terbilang_helper');
-		$this->load->helper('format_alamat_helper');
-		$this->load->library('session');
-		$this->load->database();
-		$this->load->helper('url');
-		$this->load->library("pdf/TCPDF");
+		$this->load->model('M_all');
+		$this->load->model('M_template_surat');
+		$this->load->model('Model_warga');
+		$this->load->library('upload');
+		$this->load->library('form_validation');
+
+		// Load helper jika ada
+		if (file_exists(APPPATH . 'helpers/template_surat_helper.php')) {
+			$this->load->helper('template_surat');
+		}
 	}
 
 	public function konfigurasi()
@@ -55,59 +53,120 @@ class Buatsurat extends CI_Controller
 
 	public function konfigurasi_store()
 	{
-		$template_id = $this->M_template_surat->insert_template([
-			'nama_template' => $this->input->post('nama_template'),
-			'tipe_surat'    => $this->input->post('tipe_surat'),
-			'konten'        => $this->input->post('konten'),
-		]);
+		try {
+			$this->form_validation->set_rules('nama_template', 'Nama Template', 'required|trim');
+			$this->form_validation->set_rules('tipe_surat', 'Tipe Surat', 'required|trim');
+			$this->form_validation->set_rules('konten', 'Konten Surat', 'required');
 
-		$fields = $this->input->post('fields');
-		if ($fields && is_array($fields)) {
-			foreach ($fields as $f) {
-				// Validasi minimal yang harus ada
-				if (empty($f['label']) || empty($f['nama_field']) || empty($f['tipe_input'])) {
-					continue;
-				}
-
-				// Payload dasar
-				$payload = [
-					'template_id'   => $template_id,
-					'label'         => $f['label'],
-					'nama_field'    => $f['nama_field'],
-					'tipe_input'    => $f['tipe_input'],
-					'placeholder'   => $f['placeholder'] ?? '',
-					'is_required'   => isset($f['wajib']) ? (bool)$f['wajib'] : true,
-					'sumber_data'   => null,
-					'opsi_static'   => null,
-					'tabel_relasi'  => null,
-					'kolom_value'   => null,
-					'kolom_label'   => null,
-				];
-
-				// Penanganan khusus untuk input bertipe select
-				if ($f['tipe_input'] === 'select') {
-					$payload['sumber_data'] = $f['sumber_data'] ?? 'static';
-
-					if ($payload['sumber_data'] === 'static' && !empty($f['opsi_static'])) {
-						// opsi_static harus berupa array, encode ke JSON
-						if (is_array($f['opsi_static'])) {
-							$payload['opsi_static'] = json_encode($f['opsi_static'], JSON_UNESCAPED_UNICODE);
-						}
-					} elseif ($payload['sumber_data'] === 'relasi') {
-						// ambil informasi relasi
-						$payload['tabel_relasi'] = $f['tabel_relasi'] ?? '';
-						$payload['kolom_value']  = $f['kolom_value'] ?? '';
-						$payload['kolom_label']  = $f['kolom_label'] ?? '';
-					}
-				}
-
-				// Simpan ke database
-				$this->M_template_surat->insert_field($payload);
+			if ($this->form_validation->run() === FALSE) {
+				return $this->output
+					->set_content_type('application/json')
+					->set_output(json_encode([
+						'status' => false,
+						'message' => validation_errors()
+					]));
 			}
-		}
 
-		$this->session->set_flashdata('success', 'Template berhasil ditambahkan.');
-		redirect('admin/buatsurat/konfigurasi');
+			$header_logo = null;
+			if (!empty($_FILES['header_logo']['name'])) {
+				$config['upload_path'] = './uploads/template_headers/';
+				$config['allowed_types'] = 'gif|jpg|png|jpeg|svg';
+				$config['max_size'] = 2048;
+				$config['file_name'] = 'header_logo_' . time();
+
+				if (!is_dir($config['upload_path'])) {
+					mkdir($config['upload_path'], 0755, true);
+				}
+
+				$this->upload->initialize($config);
+
+				if ($this->upload->do_upload('header_logo')) {
+					$upload_data = $this->upload->data();
+					$header_logo = 'uploads/template_headers/' . $upload_data['file_name'];
+				} else {
+					return $this->output
+						->set_content_type('application/json')
+						->set_output(json_encode([
+							'status' => false,
+							'message' => 'Gagal upload logo header: ' . strip_tags($this->upload->display_errors())
+						]));
+				}
+			}
+
+			$template_data = [
+				'nama_template'  => $this->input->post('nama_template'),
+				'tipe_surat'     => $this->input->post('tipe_surat'),
+				'konten'         => $this->input->post('konten'),
+				'use_header'     => $this->input->post('use_header') ? 1 : 0,
+				'header_content' => $this->input->post('header_content'),
+				'header_alamat'  => $this->input->post('header_alamat'),
+				'created_at'     => date('Y-m-d H:i:s'),
+				'updated_at'     => date('Y-m-d H:i:s'),
+			];
+
+			if ($header_logo) {
+				$template_data['header_logo'] = $header_logo;
+			}
+
+			$template_id = $this->M_template_surat->insert_template($template_data);
+
+			if (!$template_id) {
+				throw new Exception('Gagal menyimpan template ke database');
+			}
+
+			$fields = $this->input->post('fields');
+			if ($fields && is_array($fields)) {
+				foreach ($fields as $f) {
+					if (empty($f['label']) || empty($f['nama_field']) || empty($f['tipe_input'])) continue;
+
+					$payload = [
+						'template_id'   => $template_id,
+						'label'         => trim($f['label']),
+						'nama_field'    => trim($f['nama_field']),
+						'tipe_input'    => $f['tipe_input'],
+						'placeholder'   => isset($f['placeholder']) ? trim($f['placeholder']) : '',
+						'is_required'   => isset($f['is_required']) ? (bool)$f['is_required'] : true,
+						'sumber_data'   => null,
+						'opsi_static'   => null,
+						'tabel_relasi'  => null,
+						'kolom_value'   => null,
+						'kolom_label'   => null,
+					];
+
+					if ($f['tipe_input'] === 'select') {
+						$payload['sumber_data'] = $f['sumber_data'] ?? 'static';
+
+						if ($payload['sumber_data'] === 'static' && !empty($f['opsi_static'])) {
+							$payload['opsi_static'] = is_array($f['opsi_static'])
+								? json_encode($f['opsi_static'], JSON_UNESCAPED_UNICODE)
+								: json_encode(array_map('trim', explode(',', $f['opsi_static'])), JSON_UNESCAPED_UNICODE);
+						} elseif ($payload['sumber_data'] === 'relasi') {
+							$payload['tabel_relasi'] = $f['tabel_relasi'] ?? '';
+							$payload['kolom_value']  = $f['kolom_value'] ?? '';
+							$payload['kolom_label']  = $f['kolom_label'] ?? '';
+						}
+					}
+
+					$this->M_template_surat->insert_field($payload);
+				}
+			}
+
+			return $this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'status' => true,
+					'message' => 'Template berhasil disimpan.'
+				]));
+		} catch (Exception $e) {
+			log_message('error', 'Error in konfigurasi_store: ' . $e->getMessage());
+
+			return $this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'status' => false,
+					'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+				]));
+		}
 	}
 
 	public function konfigurasi_get($id)
@@ -127,65 +186,127 @@ class Buatsurat extends CI_Controller
 
 	public function konfigurasi_update()
 	{
-		$id = $this->input->post('id');
-		$template = $this->M_template_surat->get_template($id);
-		if (!$template) {
-			show_404();
-		}
+		try {
+			$id = $this->input->post('id');
+			if (!$id) throw new Exception('ID template tidak ditemukan');
 
-		// Update template
-		$this->M_template_surat->update_template($id, [
-			'nama_template' => $this->input->post('nama_template'),
-			'tipe_surat'    => $this->input->post('tipe_surat'),
-			'konten'        => $this->input->post('konten'),
-		]);
+			$template = $this->M_template_surat->get_template($id);
+			if (!$template) throw new Exception('Template tidak ditemukan');
 
-		// Hapus semua field terkait template ini
-		$this->db->delete('field_template_surat', ['template_id' => $id]);
+			$this->form_validation->set_rules('nama_template', 'Nama Template', 'required|trim');
+			$this->form_validation->set_rules('tipe_surat', 'Tipe Surat', 'required|trim');
+			$this->form_validation->set_rules('konten', 'Konten Surat', 'required');
 
-		// Tambah field baru
-		$fields = $this->input->post('fields');
-		if ($fields && is_array($fields)) {
-			foreach ($fields as $f) {
-				if (empty($f['label']) || empty($f['nama_field']) || empty($f['tipe_input'])) {
-					continue;
-				}
+			if ($this->form_validation->run() === FALSE) {
+				return $this->output
+					->set_content_type('application/json')
+					->set_output(json_encode([
+						'status' => false,
+						'message' => validation_errors()
+					]));
+			}
 
-				$payload = [
-					'template_id'   => $id,
-					'label'         => $f['label'],
-					'nama_field'    => $f['nama_field'],
-					'tipe_input'    => $f['tipe_input'],
-					'placeholder'   => $f['placeholder'] ?? '',
-					'is_required'   => isset($f['wajib']) ? (bool)$f['wajib'] : true,
-					'sumber_data'   => null,
-					'opsi_static'   => null,
-					'tabel_relasi'  => null,
-					'kolom_value'   => null,
-					'kolom_label'   => null,
+			// Upload logo jika ada
+			$header_logo = $template->header_logo;
+			if (!empty($_FILES['header_logo']['name'])) {
+				$config = [
+					'upload_path'   => './uploads/template_headers/',
+					'allowed_types' => 'gif|jpg|png|jpeg|svg',
+					'max_size'      => 2048,
+					'file_name'     => 'header_logo_' . time(),
 				];
 
-				if ($f['tipe_input'] === 'select') {
-					$payload['sumber_data'] = $f['sumber_data'] ?? 'static';
-
-					if ($payload['sumber_data'] === 'static' && !empty($f['opsi_static'])) {
-						if (is_array($f['opsi_static'])) {
-							$payload['opsi_static'] = json_encode($f['opsi_static'], JSON_UNESCAPED_UNICODE);
-						}
-					} elseif ($payload['sumber_data'] === 'relasi') {
-						$payload['tabel_relasi'] = $f['tabel_relasi'] ?? '';
-						$payload['kolom_value']  = $f['kolom_value'] ?? '';
-						$payload['kolom_label']  = $f['kolom_label'] ?? '';
-					}
+				if (!is_dir($config['upload_path'])) {
+					mkdir($config['upload_path'], 0755, true);
 				}
 
-				// Simpan ke database
-				$this->M_template_surat->insert_field($payload);
-			}
-		}
+				$this->upload->initialize($config);
 
-		$this->session->set_flashdata('success', 'Template berhasil diperbarui.');
-		redirect('admin/buatsurat/konfigurasi');
+				if ($this->upload->do_upload('header_logo')) {
+					if ($header_logo && file_exists('./' . $header_logo)) {
+						unlink('./' . $header_logo);
+					}
+					$upload_data = $this->upload->data();
+					$header_logo = 'uploads/template_headers/' . $upload_data['file_name'];
+				} else {
+					return $this->output
+						->set_content_type('application/json')
+						->set_output(json_encode([
+							'status' => false,
+							'message' => 'Gagal upload logo header: ' . strip_tags($this->upload->display_errors())
+						]));
+				}
+			}
+
+			$template_data = [
+				'nama_template'  => $this->input->post('nama_template'),
+				'tipe_surat'     => $this->input->post('tipe_surat'),
+				'konten'         => $this->input->post('konten'),
+				'use_header'     => $this->input->post('use_header') ? 1 : 0,
+				'header_content' => $this->input->post('header_content'),
+				'header_alamat'  => $this->input->post('header_alamat'),
+				'header_logo'    => $header_logo,
+				'updated_at'     => date('Y-m-d H:i:s'),
+			];
+
+			$this->M_template_surat->update_template($id, $template_data);
+
+			// Reset fields
+			$this->db->delete('field_template_surat', ['template_id' => $id]);
+
+			$fields = $this->input->post('fields');
+			if (is_array($fields)) {
+				foreach ($fields as $f) {
+					if (empty($f['label']) || empty($f['nama_field']) || empty($f['tipe_input'])) continue;
+
+					$payload = [
+						'template_id'   => $id,
+						'label'         => trim($f['label']),
+						'nama_field'    => trim($f['nama_field']),
+						'tipe_input'    => $f['tipe_input'],
+						'placeholder'   => $f['placeholder'] ?? '',
+						'is_required'   => isset($f['is_required']) ? (bool)$f['is_required'] : true,
+						'sumber_data'   => null,
+						'opsi_static'   => null,
+						'tabel_relasi'  => null,
+						'kolom_value'   => null,
+						'kolom_label'   => null,
+					];
+
+					if ($f['tipe_input'] === 'select') {
+						$payload['sumber_data'] = $f['sumber_data'] ?? 'static';
+
+						if ($payload['sumber_data'] === 'static' && !empty($f['opsi_static'])) {
+							$payload['opsi_static'] = is_array($f['opsi_static'])
+								? json_encode($f['opsi_static'], JSON_UNESCAPED_UNICODE)
+								: json_encode(array_map('trim', explode(',', $f['opsi_static'])), JSON_UNESCAPED_UNICODE);
+						} elseif ($payload['sumber_data'] === 'relasi') {
+							$payload['tabel_relasi'] = $f['tabel_relasi'] ?? '';
+							$payload['kolom_value']  = $f['kolom_value'] ?? '';
+							$payload['kolom_label']  = $f['kolom_label'] ?? '';
+						}
+					}
+
+					$this->M_template_surat->insert_field($payload);
+				}
+			}
+
+			return $this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'status' => true,
+					'message' => 'Template berhasil diperbarui.'
+				]));
+		} catch (Exception $e) {
+			log_message('error', 'Error in konfigurasi_update: ' . $e->getMessage());
+
+			return $this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'status' => false,
+					'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+				]));
+		}
 	}
 
 	public function konfigurasi_delete($id)
@@ -205,18 +326,150 @@ class Buatsurat extends CI_Controller
 
 	public function get_all_template_surat()
 	{
-		$templates = $this->M_template_surat->get_all_templates_formatted(); // join field_template_surat
+		try {
+			// Optimasi query dengan eager loading untuk mencegah N+1 query
+			$this->db->select('
+				ts.id,
+				ts.nama_template,
+				ts.tipe_surat,
+				ts.konten,
+				ts.use_header,
+				ts.header_content,
+				ts.header_logo,
+				ts.header_alamat,
+				GROUP_CONCAT(
+					CONCAT(
+						\'{"id":"\', fts.nama_field, \'",\',
+						\'"label":"\', fts.label, \'",\',
+						\'"type":"\', fts.tipe_input, \'",\',
+						\'"placeholder":"\', IFNULL(fts.placeholder, \'\'), \'",\',
+						\'"is_required":\', fts.is_required, \',\',
+						\'"sumber_data":"\', IFNULL(fts.sumber_data, \'\'), \'",\',
+						\'"opsi_static":"\', IFNULL(fts.opsi_static, \'\'), \'",\',
+						\'"tabel_relasi":"\', IFNULL(fts.tabel_relasi, \'\'), \'",\',
+						\'"kolom_value":"\', IFNULL(fts.kolom_value, \'\'), \'",\',
+						\'"kolom_label":"\', IFNULL(fts.kolom_label, \'\'), \'"}\'
+					) SEPARATOR \',\'
+				) as fields_json
+			');
+			$this->db->from('template_surat ts');
+			$this->db->join('field_template_surat fts', 'fts.template_id = ts.id', 'left');
+			$this->db->group_by('ts.id');
+			$this->db->order_by('ts.created_at', 'DESC');
 
-		header('Content-Type: application/json');
-		echo json_encode(['templates' => $templates ?: []]);
+			$query = $this->db->get();
+
+			if (!$query) {
+				throw new Exception('Database query failed');
+			}
+
+			$results = $query->result_array();
+			$templates = [];
+
+			foreach ($results as $row) {
+				$fields = [];
+				if (!empty($row['fields_json'])) {
+					$fieldsArray = explode(',', $row['fields_json']);
+					foreach ($fieldsArray as $fieldJson) {
+						$field = json_decode($fieldJson, true);
+						if ($field && is_array($field)) {
+							$fields[] = $field;
+						}
+					}
+				}
+
+				$templates[] = [
+					'id' => $row['id'],
+					'name' => $row['nama_template'],
+					'type' => $row['tipe_surat'],
+					'content_template' => $row['konten'],
+					'use_header' => (bool)$row['use_header'],
+					'header_content' => $row['header_content'],
+					'header_logo' => $row['header_logo'],
+					'header_alamat' => $row['header_alamat'],
+					'fields' => $fields
+				];
+			}
+
+			header('Content-Type: application/json');
+			echo json_encode([
+				'status' => 'success',
+				'templates' => $templates
+			]);
+		} catch (Exception $e) {
+			log_message('error', 'Error in get_all_template_surat: ' . $e->getMessage());
+			header('Content-Type: application/json');
+			http_response_code(500);
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Gagal memuat template surat',
+				'error' => ENVIRONMENT === 'development' ? $e->getMessage() : 'Internal server error'
+			]);
+		}
 	}
 
 	public function get_data_warga()
 	{
-		$warga = $this->M_template_surat->get_all_warga();
+		try {
+			// Optimasi query dengan caching dan limit
+			$cache_key = 'warga_data_' . md5('all_warga');
+			$warga = $this->cache->get($cache_key);
 
-		header('Content-Type: application/json');
-		echo json_encode(['warga' => $warga ?: []]);
+			if (!$warga) {
+				$this->db->select('
+					ak.nik,
+					ak.nama_lengkap,
+					ak.tgl_lahir,
+					ak.gender,
+					ak.agama,
+					ak.status_kawin,
+					ak.posisi,
+					ak.pekerjaan,
+					dw.nomor_kk,
+					dw.kepala_keluarga,
+					dw.alamat,
+					dw.rt,
+					dw.rw,
+					dw.desa,
+					dw.kecamatan,
+					dw.kota,
+					dw.kode_pos,
+					dw.propinsi
+				');
+				$this->db->from('anggota_keluarga ak');
+				$this->db->join('data_warga dw', 'dw.nomor_kk = ak.nomor_kk', 'left');
+				$this->db->where('ak.nama_lengkap IS NOT NULL');
+				$this->db->where('ak.nama_lengkap !=', '');
+				$this->db->order_by('ak.nama_lengkap', 'ASC');
+				$this->db->limit(1000); // Limit untuk performance
+
+				$query = $this->db->get();
+
+				if (!$query) {
+					throw new Exception('Database query failed');
+				}
+
+				$warga = $query->result_array();
+
+				// Cache for 30 minutes
+				$this->cache->save($cache_key, $warga, 1800);
+			}
+
+			header('Content-Type: application/json');
+			echo json_encode([
+				'status' => 'success',
+				'warga' => $warga ?: []
+			]);
+		} catch (Exception $e) {
+			log_message('error', 'Error in get_data_warga: ' . $e->getMessage());
+			header('Content-Type: application/json');
+			http_response_code(500);
+			echo json_encode([
+				'status' => 'error',
+				'message' => 'Gagal memuat data warga',
+				'error' => ENVIRONMENT === 'development' ? $e->getMessage() : 'Internal server error'
+			]);
+		}
 	}
 
 	public function index()
@@ -494,120 +747,15 @@ class Buatsurat extends CI_Controller
 			return;
 		}
 
-		// Update status surat
-		$updated = $this->db->update('tb_new_surat', ['status' => $status], ['id_alias' => $id_alias]);
+		$updated = $this->M_new_surat->update($surat['id'], [
+			'status' => $status,
+			'tgl_update' => date('Y-m-d H:i:s')
+		]);
+
 		if ($updated) {
 			$this->session->set_flashdata('success', 'Status surat berhasil diperbarui.');
 		} else {
 			$this->session->set_flashdata('error', 'Gagal memperbarui status surat.');
-		}
-		redirect('admin/buatsurat/list');
-	}
-
-	private $token = '$2y$10$byA1Efq.uQ0V03tQB5m03.R06Ro0Eln8LazYUXGkIdw2zsG0rua5e'; // Token API
-	private function kirim_whatsapp($target, $pesan)
-	{
-		$url = 'https://notificationwa.com/api/post';
-
-		$data = array(
-			'isi_pesan' => $pesan,
-			'nomor_recieved' => $target
-		);
-
-		$headers = array(
-			"Authorization: $this->token"
-		);
-
-		$curl = curl_init();
-
-		curl_setopt_array($curl, array(
-			CURLOPT_URL => $url,
-			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_ENCODING => '',
-			CURLOPT_MAXREDIRS => 10,
-			CURLOPT_TIMEOUT => 0,
-			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-			CURLOPT_CUSTOMREQUEST => 'POST',
-			CURLOPT_POSTFIELDS => http_build_query($data), // Pastikan data dikirim dalam format yang benar
-			CURLOPT_HTTPHEADER => $headers,
-		));
-
-		$response = curl_exec($curl);
-		$http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-		$error = curl_error($curl);
-		curl_close($curl);
-
-		// Debugging: Log response API WhatsApp
-		log_message('debug', "WhatsApp API Response: HTTP Code - $http_code | Response - $response | cURL Error - $error");
-
-		// Jika terjadi error saat cURL
-		if ($error) {
-			log_message('error', "WhatsApp API Error: $error");
-			return false;
-		}
-
-		// Decode JSON response
-		$result = json_decode($response, true);
-
-		// Pastikan API mengembalikan sukses
-		if ($http_code == 200 && isset($result['status']) && strtolower($result['status']) == 'success') {
-			return true;
-		}
-
-		// Jika API tidak sukses, log pesan error
-		log_message('error', "WhatsApp API Error: " . json_encode($result));
-		return false;
-	}
-
-	public function kirim_surat($id)
-	{
-		$this->load->model('M_new_surat');
-		$this->load->model('M_all');
-		$surat = $this->M_new_surat->get_by_id_alias($id);
-		$profile_desa = $this->M_all->get_profil_desa();
-
-		if (!$surat) {
-			$this->session->set_flashdata('error', 'Surat tidak ditemukan.');
-			redirect('admin/buatsurat/list');
-			return;
-		}
-
-		// Buat link unduh PDF
-		$link_pdf = base_url($surat['file']);
-		if (!$link_pdf) {
-			$this->session->set_flashdata('error', 'File surat tidak ditemukan.');
-			redirect('admin/buatsurat/list');
-			return;
-		}
-
-		// Set expired_at ke 24 jam ke depan dan update tgl_update ke waktu sekarang
-		$expired_at = date('Y-m-d H:i:s', strtotime('+24 hours'));
-		$update_data = [
-			'expired_at' => $expired_at,
-			'tgl_update' => date('Y-m-d H:i:s'),
-		];
-		$this->M_new_surat->update($surat['id'], $update_data);
-
-		// Format pesan WhatsApp
-		$pesan = "Hallo, *{$surat['nama_lengkap']}*\n\n" .
-			"No Pengajuan : *{$surat['no_pengajuan']}*\n" .
-			"Pengajuan *{$surat['jenis_surat']}* siap diunduh:\n" .
-			"$link_pdf\n\n" .
-			"Link berlaku selama 24 jam.\n" .
-			"Link akan kadaluarsa pada : *" . date('d-M-Y H:i:s', strtotime('+24 hours')) . "*\n" .
-			"Pastikan anda sudah mendownload file surat PDF.\n\n" .
-			"Terima kasih,\nStaff Pelayanan - " .
-			"Desa *{$profile_desa->nama_desa}*";
-
-		// Kirim pesan ke WhatsApp
-		$response = $this->kirim_whatsapp($surat['no_wa'], $pesan);
-
-		// Beri notifikasi berdasarkan hasil pengiriman
-		if ($response) {
-			$this->session->set_flashdata('error', 'Gagal mengirimkan pesan');
-		} else {
-			$this->session->set_flashdata('success', 'Pesan berhasil dikirim!');
 		}
 
 		redirect('admin/buatsurat/list');
