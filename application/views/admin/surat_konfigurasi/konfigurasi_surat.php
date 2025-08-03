@@ -52,9 +52,36 @@
 		margin-bottom: 2rem;
 	}
 
+	.preview-header.horizontal {
+		text-align: left;
+	}
+
 	.preview-header img {
 		max-height: 80px;
 		margin-bottom: 0.5rem;
+	}
+
+	.preview-header .header-content {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+	}
+
+	.preview-header .logo-left,
+	.preview-header .logo-right {
+		max-height: 80px;
+	}
+
+	.preview-header .logo-top,
+	.preview-header .logo-bottom {
+		display: block;
+		margin: 0 auto 0.5rem;
+	}
+
+	.preview-header .logo-bottom {
+		margin-top: 1rem;
+		margin-bottom: 0;
 	}
 
 	.preview-header h3 {
@@ -341,12 +368,45 @@
 										</h6>
 
 										<div class="mb-3">
-											<label class="form-label">
+											<label for="headerLogoInput" class="form-label">
 												<i class="bi bi-image"></i> Logo Header
 											</label>
-											<input type="file" name="header_logo" class="form-control" accept="image/*">
+											<input type="file" id="headerLogoInput" name="header_logo" class="form-control" accept="image/*">
 											<small class="text-muted">Format: JPG, PNG, SVG. Maksimal 2MB.</small>
 										</div>
+
+										<div class="mb-3">
+											<label class="form-label d-block mb-2 fw-semibold">
+												<i class="bi bi-layout-three-columns"></i> Posisi Logo
+											</label>
+											<div class="d-flex flex-wrap gap-3">
+												<div class="form-check">
+												<input class="form-check-input" type="radio" name="logo_position" id="logoTop" value="top" checked>
+												<label class="form-check-label" for="logoTop">
+													<i class="bi bi-arrow-down"></i> Atas (Default)
+												</label>
+												</div>
+												<div class="form-check">
+												<input class="form-check-input" type="radio" name="logo_position" id="logoLeft" value="left">
+												<label class="form-check-label" for="logoLeft">
+													<i class="bi bi-arrow-right"></i> Kiri
+												</label>
+												</div>
+												<div class="form-check">
+												<input class="form-check-input" type="radio" name="logo_position" id="logoRight" value="right">
+												<label class="form-check-label" for="logoRight">
+													<i class="bi bi-arrow-left"></i> Kanan
+												</label>
+												</div>
+												<div class="form-check">
+												<input class="form-check-input" type="radio" name="logo_position" id="logoBottom" value="bottom">
+												<label class="form-check-label" for="logoBottom">
+													<i class="bi bi-arrow-up"></i> Bawah
+												</label>
+												</div>
+											</div>
+										</div>
+
 
 										<div class="mb-3">
 											<label class="form-label">
@@ -985,14 +1045,17 @@
 		function updatePreview() {
 			const previewContent = document.getElementById('previewContent');
 
-			// Get form data
-			const namaTemplate = document.querySelector('[name="nama_template"]')?.value || 'Template Surat';
-			const tipeTemplate = document.querySelector('[name="tipe_surat"]')?.value || 'Tipe Surat';
-			const useHeader = document.getElementById('useHeaderCheck')?.checked;
-			const headerAlamat = document.querySelector('[name="header_alamat"]')?.value || '';
-			const headerContent = document.querySelector('[name="header_content"]')?.value || '';
+			// Ambil data input form
+			const formValues = {
+				namaTemplate: document.querySelector('[name="nama_template"]')?.value || 'Template Surat',
+				tipeTemplate: document.querySelector('[name="tipe_surat"]')?.value || 'Tipe Surat',
+				useHeader: document.getElementById('useHeaderCheck')?.checked,
+				headerAlamat: document.querySelector('[name="header_alamat"]')?.value || '',
+				headerContent: document.querySelector('[name="header_content"]')?.value || '',
+				logoPosition: document.querySelector('input[name="logo_position"]:checked')?.value || 'top',
+			};
 
-			// Get content from CKEditor with full HTML preservation
+			// Ambil konten dari CKEditor (jika ada)
 			let content = '';
 			if (typeof CKEDITOR !== 'undefined' && CKEDITOR.instances['konten']) {
 				content = CKEDITOR.instances['konten'].getData();
@@ -1000,37 +1063,36 @@
 				content = document.querySelector('[name="konten"]')?.value || '';
 			}
 
-			// Process format codes while preserving HTML
+			// Ganti format tag khusus ke HTML
+			const formatReplacements = [
+				[/\[br\]/g, '<br>'],
+				[/\[tab\]/g, '<span class="tab"></span>'],
+				[/\[center\](.*?)\[\/center\]/gs, '<div class="center">$1</div>'],
+				[/\[bold\](.*?)\[\/bold\]/gs, '<strong>$1</strong>'],
+				[/\[underline\](.*?)\[\/underline\]/gs, '<u>$1</u>'],
+				[/\[italic\](.*?)\[\/italic\]/gs, '<em>$1</em>'],
+				[/\[right\](.*?)\[\/right\]/gs, '<div class="text-end">$1</div>'],
+				[/\[left\](.*?)\[\/left\]/gs, '<div class="text-start">$1</div>'],
+				[/\[justify\](.*?)\[\/justify\]/gs, '<div class="text-justify">$1</div>'],
+				[/\[table\]/g, '<table>'],
+				[/\[\/table\]/g, '</table>'],
+				[/\[tr\]/g, '<tr>'],
+				[/\[\/tr\]/g, '</tr>'],
+				[/\[td\]/g, '<td style="padding:2px 4px;">'],
+				[/\[\/td\]/g, '</td>']
+			];
+
 			let processedContent = content;
+			for (const [pattern, replacement] of formatReplacements) {
+				processedContent = processedContent.replace(pattern, replacement);
+			}
 
-			// Replace custom format codes with HTML equivalents
-			processedContent = processedContent
-				.replace(/\[br\]/g, '<br>')
-				.replace(/\[tab\]/g, '<span class="tab"></span>')
-				.replace(/\[center\](.*?)\[\/center\]/gs, '<div class="center">$1</div>')
-				.replace(/\[bold\](.*?)\[\/bold\]/gs, '<strong>$1</strong>')
-				.replace(/\[underline\](.*?)\[\/underline\]/gs, '<u>$1</u>')
-				.replace(/\[italic\](.*?)\[\/italic\]/gs, '<em>$1</em>')
-				.replace(/\[right\](.*?)\[\/right\]/gs, '<div class="text-end">$1</div>')
-				.replace(/\[left\](.*?)\[\/left\]/gs, '<div class="text-start">$1</div>')
-				.replace(/\[justify\](.*?)\[\/justify\]/gs, '<div class="text-justify">$1</div>')
-				.replace(/\[table\]/g, '<table>')
-				.replace(/\[\/table\]/g, '</table>')
-				.replace(/\[tr\]/g, '<tr>')
-				.replace(/\[\/tr\]/g, '</tr>')
-				.replace(/\[td\]/g, '<td style="padding:2px 4px;">')
-				.replace(/\[\/td\]/g, '</td>');
-
-			// Replace placeholder variables with sample data
+			// Ganti placeholder dengan data contoh
 			const placeholders = {
 				'{{nama_lengkap}}': 'John Doe',
 				'{{nik}}': '1234567890123456',
 				'{{alamat}}': 'Jl. Contoh No. 123, RT 01/RW 02, Kelurahan Contoh',
-				'{{tanggal}}': new Date().toLocaleDateString('id-ID', {
-					year: 'numeric',
-					month: 'long',
-					day: 'numeric'
-				}),
+				'{{tanggal}}': new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }),
 				'{{nomor_surat}}': '001/KEL/2024',
 				'{{nama_pejabat}}': 'Budi Santoso',
 				'{{jabatan}}': 'Kepala Desa',
@@ -1048,36 +1110,44 @@
 				'{{ttd_nip}}': '196501011990031001'
 			};
 
-			Object.keys(placeholders).forEach(placeholder => {
-				const regex = new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g');
-				processedContent = processedContent.replace(regex, placeholders[placeholder]);
-			});
-
-			// Build complete HTML structure
-			let previewHTML = '';
-
-			// Add header if enabled
-			if (useHeader) {
-				previewHTML += '<div class="preview-header">';
-				if (window.previewLogoData) {
-					previewHTML += `<img src="${window.previewLogoData}" alt="Logo" style="max-height: 80px; margin-bottom: 10px;">`;
-				}
-				previewHTML += `<h3>${namaTemplate}</h3>`;
-				if (headerAlamat) {
-					previewHTML += `<p>${headerAlamat}</p>`;
-				}
-				if (headerContent) {
-					previewHTML += `<p>${headerContent}</p>`;
-				}
-				previewHTML += '</div>';
+			for (const [key, value] of Object.entries(placeholders)) {
+				processedContent = processedContent.replace(new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'), value);
 			}
 
-			// Add main content with full HTML support
-			previewHTML += '<div class="preview-content">';
-			previewHTML += processedContent || '<p class="text-muted text-center">Mulai mengetik untuk melihat preview...</p>';
-			previewHTML += '</div>';
+			// Bangun struktur preview
+			let previewHTML = '';
 
-			// Update preview with loading state
+			// HEADER
+			if (formValues.useHeader) {
+				const { logoPosition, namaTemplate, headerAlamat, headerContent } = formValues;
+				const logoHTML = window.previewLogoData ? `<img src="${window.previewLogoData}" alt="Logo" class="logo-${logoPosition}">` : '';
+
+				const isHorizontal = ['left', 'right'].includes(logoPosition);
+				const headerClass = `preview-header ${isHorizontal ? 'horizontal' : ''}`;
+
+				let headerInner = '';
+
+				if (logoPosition === 'top') headerInner += `${logoHTML}`;
+				headerInner += `<div class="header-content">`;
+
+				if (logoPosition === 'left') headerInner += `${logoHTML}`;
+				headerInner += `<div><h3>${namaTemplate}</h3>`;
+				if (headerAlamat) headerInner += `<p>${headerAlamat}</p>`;
+				if (headerContent) headerInner += `<p>${headerContent}</p>`;
+				headerInner += `</div>`;
+				if (logoPosition === 'right') headerInner += `${logoHTML}`;
+
+				headerInner += `</div>`;
+				if (logoPosition === 'bottom') headerInner += `${logoHTML}`;
+
+				previewHTML += `<div class="${headerClass}">${headerInner}</div>`;
+			}
+
+			// ISI UTAMA
+			previewHTML += `<div class="preview-content">`;
+			previewHTML += processedContent || `<p class="text-muted text-center">Mulai mengetik untuk melihat preview...</p>`;
+			previewHTML += `</div>`;
+
 			previewContent.classList.add('preview-loading');
 			setTimeout(() => {
 				previewContent.innerHTML = previewHTML;
@@ -1375,6 +1445,11 @@
 						modalTitle.innerHTML = '<i class="bi bi-file-earmark-text"></i> Tambah Template Surat';
 					}
 				});
+			});
+
+			// ketika ubah posisi logo
+			$('input[name="logo_position"]').on('change', function() {
+				updatePreview();
 			});
 		});
 

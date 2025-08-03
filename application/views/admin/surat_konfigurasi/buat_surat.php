@@ -3,12 +3,84 @@
 
 <style>
 	#letter-preview {
-	width: 794px; /* 210mm in 96dpi */
-	min-height: 1123px; /* 297mm in 96dpi */
-	background: #fff;
-	/* padding: 30px; */
-	box-sizing: border-box;
-}
+		width: 794px; /* 210mm in 96dpi */
+		min-height: 1123px; /* 297mm in 96dpi */
+		background: #fff;
+		/* padding: 50px; */
+		box-sizing: border-box;
+	}
+
+	/* Preview Content Styles */
+	.preview-header {
+		text-align: center;
+		border-bottom: 2px solid #333;
+		padding-bottom: 1rem;
+		margin-bottom: 2rem;
+	}
+
+	.preview-header.horizontal {
+		text-align: left;
+	}
+
+	.preview-header img {
+		max-height: 80px;
+		margin-bottom: 0.5rem;
+	}
+
+	.preview-header .header-content {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+	}
+
+	.preview-header .logo-left,
+	.preview-header .logo-right {
+		max-height: 80px;
+	}
+
+	.preview-header .logo-top,
+	.preview-header .logo-bottom {
+		display: block;
+		margin: 0 auto 0.5rem;
+	}
+
+	.preview-header .logo-bottom {
+		margin-top: 1rem;
+		margin-bottom: 0;
+	}
+
+	.preview-header h3 {
+		margin: 0;
+		font-weight: bold;
+		text-transform: uppercase;
+	}
+
+	.preview-header p {
+		margin: 0.25rem 0;
+		font-size: 0.9em;
+	}
+
+	.preview-content {
+		text-align: justify;
+	}
+
+	.preview-content .center {
+		text-align: center;
+	}
+
+	.preview-content .bold {
+		font-weight: bold;
+	}
+
+	.preview-content .underline {
+		text-decoration: underline;
+	}
+
+	.preview-content .tab {
+		display: inline-block;
+		width: 2rem;
+	}
 </style>
 
 <main id="main" class="main">
@@ -79,7 +151,7 @@
 							<div class="card shadow-sm table-responsive">
 								<div class="card-body">
 									<h5 class="card-title">Preview Surat</h5>
-									<div id="letter-preview" class="" style="min-height: 200px;">
+									<div id="letter-preview" class="p-3" style="min-height: 200px;">
 										<p class="text-center">Pilih template dan isi data untuk melihat preview.</p>
 									</div>
 								</div>
@@ -209,7 +281,8 @@
 				method: 'GET',
 				dataType: 'json',
 				success: function(response) {
-					if (!response || !response.warga) {
+					
+					if (response.status != 'success') {
 						Swal.fire({
 							icon: 'error',
 							title: 'Gagal',
@@ -222,7 +295,7 @@
 					response.warga.forEach(w => {
 						$wargaSelect.append(
 							$('<option>', {
-								value: w.anggota_id,
+								value: w.nik,
 								text: `${w.nama_lengkap} (${w.nik})`
 							})
 						);
@@ -231,7 +304,7 @@
 					wargaList = response.warga;
 				},
 				error: function(err) {
-					console.error('Gagal memuat data warga.', err);
+					console.error('Gagal memuat data warga.', err.responseText);
 					Swal.fire({
 						icon: 'error',
 						title: 'Gagal',
@@ -302,32 +375,39 @@
 			if (!tmpl) return;
 
 			let content = '';
-			
-			// Add header if enabled
+
+			// HEADER
 			if (tmpl.use_header) {
-				content += '<div class="header-section" style="border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px;">';
+				const { logoPosition = tmpl.header_logo_position, namaTemplate = tmpl.name, headerAlamat = tmpl.header_alamat, headerContent = tmpl.header_content, previewLogoData = tmpl.header_logo } = tmpl;
 				
-				if (tmpl.header_logo) {
-					content += `<div class="text-center mb-3">`;
-					content += `<img src="<?= base_url() ?>${tmpl.header_logo}" alt="Logo" style="max-height: 80px;">`;
-					content += `</div>`;
-				}
-				
-				if (tmpl.header_alamat) {
-					content += `<div class="text-center mb-2" style="font-size: 14px; line-height: 1.4;">`;
-					content += `<strong>${tmpl.header_alamat}</strong>`;
-					content += `</div>`;
-				}
-				
-				if (tmpl.header_content) {
-					content += `<div class="text-center mb-2" style="font-size: 12px; color: #666;">`;
-					content += tmpl.header_content;
-					content += `</div>`;
-				}
-				
-				content += '</div>';
+				const BASE_URL = "<?= base_url() ?>";
+				const logoHTML = previewLogoData
+					? `<img src="${BASE_URL}${previewLogoData}" alt="Logo" class="logo-${logoPosition}">`
+					: '';
+
+				const isHorizontal = ['left', 'right'].includes(logoPosition);
+				const headerClass = `preview-header ${isHorizontal ? 'horizontal' : ''}`;
+
+				let headerInner = '';
+
+				if (logoPosition === 'top') headerInner += `${logoHTML}`;
+				headerInner += `<div class="header-content">`;
+
+				if (logoPosition === 'left') headerInner += `${logoHTML}`;
+				headerInner += `<div><h3>${namaTemplate}</h3>`;
+				if (headerAlamat) headerInner += `<p>${headerAlamat}</p>`;
+				if (headerContent) headerInner += `<p>${headerContent}</p>`;
+				headerInner += `</div>`;
+				if (logoPosition === 'right') headerInner += `${logoHTML}`;
+
+				headerInner += `</div>`;
+				if (logoPosition === 'bottom') headerInner += `${logoHTML}`;
+
+				content += `<div class="${headerClass}">${headerInner}</div>`;
 			}
-			
+
+			// ISI UTAMA
+			content += `<div class="preview-content">`;
 			// Add main content
 			content += tmpl.content_template
 				// Text formatting
@@ -354,8 +434,9 @@
 
 				// Tabs (optional, only if outside table)
 				.replace(/\[tab\]/g, '&emsp;');
-			
-			
+			// content += processedContent || `<p class="text-muted text-center">Mulai mengetik untuk melihat preview...</p>`;
+			content += `</div>`;
+
 			const variables = [...new Set(content.match(/{{\s*([\w\s_]+)\s*}}/g))];
 
 			if (variables) {
@@ -393,7 +474,7 @@
 				});
 			}
 
-			$preview.html(`<div style="font-family:'Courier New', monospace; line-height: 1.5; font-weight: bold;">${content}</div>`);
+			$preview.html(`<div style="font-family:'Times New Roman', serif; line-height: 1.5; font-weight: bold;">${content}</div>`);
 		}
 
 		$templateSelect.change(function() {
@@ -488,7 +569,7 @@
 
 		$('#warga-select').change(function() {
 			const selectedId = $(this).val();
-			selectedWarga = wargaList.find(w => w.anggota_id == selectedId);
+			selectedWarga = wargaList.find(w => w.nik == selectedId);
 
 			if (selectedWarga) {
 				prefillFieldsFromWarga(selectedWarga);
@@ -585,28 +666,37 @@
 
 			try {
 				const canvas = await html2canvas(content, {
-					scale: 2
+					scale: 3,
+					useCORS: true,
+					scrollY: 0
 				});
-				const imgData = canvas.toDataURL("image/png");
-				const imgWidth = 210; // A4 in mm
-				const pageHeight = 297;
+
+				const imgData = canvas.toDataURL("image/jpeg", 1.0);
+
+				const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+				const pdfWidth = pdf.internal.pageSize.getWidth();
+				const pdfHeight = pdf.internal.pageSize.getHeight();
+
+				const imgWidth = pdfWidth;
 				const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-				let heightLeft = imgHeight;
-				let position = 0;
+				let finalWidth = imgWidth;
+				let finalHeight = imgHeight;
+				let xOffset = 0;
+				let yOffset = 0;
 
-				doc.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-				heightLeft -= pageHeight;
-
-				while (heightLeft > 0) {
-					position = heightLeft - imgHeight;
-					doc.addPage();
-					doc.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-					heightLeft -= pageHeight;
+				if (imgHeight > pdfHeight) {
+					finalHeight = pdfHeight;
+					finalWidth = (canvas.width * finalHeight) / canvas.height;
+					xOffset = (pdfWidth - finalWidth) / 2;
+					yOffset = 0;
+				} else {
+					yOffset = (pdfHeight - imgHeight) / 2;
 				}
 
-				// Konversi PDF ke Blob dan buat File
-				const pdfBlob = doc.output("blob");
+				pdf.addImage(imgData, "JPEG", xOffset, yOffset, finalWidth, finalHeight);
+
+				const pdfBlob = pdf.output("blob");
 				const pdfFile = new File([pdfBlob], "surat_digital.pdf", {
 					type: "application/pdf"
 				});

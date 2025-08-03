@@ -3,6 +3,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class Buatsurat extends CI_Controller
 {
+	private $token = '$2y$10$byA1Efq.uQ0V03tQB5m03.R06Ro0Eln8LazYUXGkIdw2zsG0rua5e';
+
 	public function __construct()
 	{
 		parent::__construct();
@@ -16,6 +18,8 @@ class Buatsurat extends CI_Controller
 		if (file_exists(APPPATH . 'helpers/template_surat_helper.php')) {
 			$this->load->helper('template_surat');
 		}
+		// Inisialisasi cache driver
+		$this->load->driver('cache', ['adapter' => 'file']);
 	}
 
 	public function konfigurasi()
@@ -106,6 +110,7 @@ class Buatsurat extends CI_Controller
 
 			if ($header_logo) {
 				$template_data['header_logo'] = $header_logo;
+				$template_data['header_logo_position'] = $this->input->post('logo_position') ?: 'top';
 			}
 
 			$template_id = $this->M_template_surat->insert_template($template_data);
@@ -246,6 +251,7 @@ class Buatsurat extends CI_Controller
 				'header_content' => $this->input->post('header_content'),
 				'header_alamat'  => $this->input->post('header_alamat'),
 				'header_logo'    => $header_logo,
+				'header_logo_position' => $this->input->post('logo_position') ?: 'top',
 				'updated_at'     => date('Y-m-d H:i:s'),
 			];
 
@@ -337,6 +343,7 @@ class Buatsurat extends CI_Controller
 				ts.header_content,
 				ts.header_logo,
 				ts.header_alamat,
+				ts.header_logo_position,
 				GROUP_CONCAT(
 					CONCAT(
 						\'{"id":"\', fts.nama_field, \'",\',
@@ -387,6 +394,7 @@ class Buatsurat extends CI_Controller
 					'header_content' => $row['header_content'],
 					'header_logo' => $row['header_logo'],
 					'header_alamat' => $row['header_alamat'],
+					'header_logo_position' => $row['header_logo_position'],
 					'fields' => $fields
 				];
 			}
@@ -646,24 +654,27 @@ class Buatsurat extends CI_Controller
 	{
 		header('Content-Type: application/json');
 		$this->load->model('M_new_surat');
+
 		$surat = $this->M_new_surat->get_by_id_alias($id);
 		if (!$surat) {
 			echo json_encode(['success' => false, 'message' => 'Surat tidak ditemukan.']);
 			return;
 		}
 
-		// Ambil data form
 		$data = $this->input->post();
 
-		// Validasi data
+		// Validasi wajib
 		if (empty($data['template_id']) || empty($data['nik'])) {
-			echo json_encode(['success' => false, 'message' => 'Template atau Warga tidak boleh kosong.']);
+			echo json_encode(['success' => false, 'message' => 'Template dan NIK wajib diisi.']);
 			return;
 		}
 
-		// Penanganan file
+		$filePath = $surat['file']; // default: gunakan file lama
+
+		// Penanganan file baru (jika ada)
 		$file = $_FILES['file'] ?? null;
-		$filePath = $surat['file']; // Default: file lama
+		$uploadedNewFile = false;
+		$newFilePath = '';
 
 		if ($file && $file['error'] === UPLOAD_ERR_OK) {
 			$uploadDir = FCPATH . 'uploads/surat/';
@@ -671,18 +682,15 @@ class Buatsurat extends CI_Controller
 				mkdir($uploadDir, 0755, true);
 			}
 
-			$ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-			$filename = 'surat_' . time() . '.' . $ext;
+			$ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+			$filename = 'surat_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
 			$fullPath = $uploadDir . $filename;
 
 			if (move_uploaded_file($file['tmp_name'], $fullPath)) {
-				$filePath = 'uploads/surat/' . $filename;
-				// Hapus file lama jika ada
-				if ($surat['file'] && file_exists(FCPATH . $surat['file'])) {
-					unlink(FCPATH . $surat['file']);
-				}
+				$uploadedNewFile = true;
+				$newFilePath = 'uploads/surat/' . $filename;
 			} else {
-				echo json_encode(['success' => false, 'message' => 'Gagal menyimpan file.']);
+				echo json_encode(['success' => false, 'message' => 'Gagal menyimpan file baru.']);
 				return;
 			}
 		}
@@ -691,17 +699,47 @@ class Buatsurat extends CI_Controller
 		$payload = [
 			'nik' => $data['nik'],
 			'template_id' => $data['template_id'],
-			'no_wa' => $data['no_wa'],
-			'isi_surat' => $data['isi_surat'],
-			'file' => $filePath,
-			'tgl_update' => date('Y-m-d H:i:s'),
+			'no_wa' => $data['no_wa'] ?? '',
+			'isi_surat' => $data['isi_surat'] ?? '',
+			'tgl_update' => date('Y-m-d H:i:s')
 		];
 
-		$updated = $this->M_new_surat->update($surat['id'], $payload);
-		if ($updated) {
-			echo json_encode(['success' => true, 'message' => 'Surat berhasil diperbarui.']);
+		// Tambahkan file jika berhasil upload
+		if ($uploadedNewFile) {
+			$payload['file'] = $newFilePath;
+		}
+
+		$updated = $this->db->update('tb_new_surat', $payload, ['id_alias' => $id]);
+
+		// Gunakan affected_rows sebagai fallback jika data tidak berubah
+		$isUpdated = $updated || $this->db->affected_rows() >= 0;
+
+		if ($isUpdated) {
+			// Jika ada file baru diupload, hapus file lama
+			if ($uploadedNewFile && !empty($surat['file'])) {
+				$oldFilePath = FCPATH . $surat['file'];
+				if (file_exists($oldFilePath)) {
+					@unlink($oldFilePath); // gunakan @unlink untuk suppress warning jika file terkunci
+				}
+			}
+
+			echo json_encode([
+				'success' => true,
+				'message' => 'Surat berhasil diperbarui.'
+			]);
 		} else {
-			echo json_encode(['success' => false, 'message' => 'Gagal memperbarui surat.']);
+			// Rollback: hapus file baru yang sudah diupload jika update gagal
+			if ($uploadedNewFile && !empty($newFilePath)) {
+				$newFullPath = FCPATH . $newFilePath;
+				if (file_exists($newFullPath)) {
+					@unlink($newFullPath);
+				}
+			}
+
+			echo json_encode([
+				'success' => false,
+				'message' => 'Gagal memperbarui surat.'
+			]);
 		}
 	}
 
@@ -719,7 +757,7 @@ class Buatsurat extends CI_Controller
 			unlink(FCPATH . $surat['file']);
 		}
 
-		$deleted = $this->M_new_surat->delete($surat['id']);
+		$deleted = $this->db->delete('tb_new_surat', ['id_alias' => $id]);
 		if ($deleted) {
 			echo json_encode(['success' => true, 'message' => 'Surat berhasil dihapus.']);
 		} else {
@@ -747,10 +785,10 @@ class Buatsurat extends CI_Controller
 			return;
 		}
 
-		$updated = $this->M_new_surat->update($surat['id'], [
+		$updated = $this->db->update('tb_new_surat', [
 			'status' => $status,
 			'tgl_update' => date('Y-m-d H:i:s')
-		]);
+		], ['id_alias' => $id_alias]);
 
 		if ($updated) {
 			$this->session->set_flashdata('success', 'Status surat berhasil diperbarui.');
@@ -758,6 +796,100 @@ class Buatsurat extends CI_Controller
 			$this->session->set_flashdata('error', 'Gagal memperbarui status surat.');
 		}
 
+		redirect('admin/buatsurat/list');
+	}
+
+	private function kirim_whatsapp($target, $pesan) {
+        $url = 'https://notificationwa.com/api/post';
+    
+        $data = array(
+            'isi_pesan' => $pesan,
+            'nomor_recieved' => $target
+        );
+    
+        $headers = array(
+            "Authorization: $this->token"
+        );
+    
+        $curl = curl_init();
+    
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => '',
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_POSTFIELDS => http_build_query($data), // Pastikan data dikirim dalam format yang benar
+            CURLOPT_HTTPHEADER => $headers,
+        ));
+    
+        $response = curl_exec($curl);
+        $http_code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $error = curl_error($curl);
+        curl_close($curl);
+    
+        // Debugging: Log response API WhatsApp
+        log_message('debug', "WhatsApp API Response: HTTP Code - $http_code | Response - $response | cURL Error - $error");
+    
+        // Jika terjadi error saat cURL
+        if ($error) {
+            log_message('error', "WhatsApp API Error: $error");
+            return false;
+        }
+    
+        // Decode JSON response
+        $result = json_decode($response, true);
+    
+        // Pastikan API mengembalikan sukses
+        if ($http_code == 200 && isset($result['status']) && strtolower($result['status']) == 'success') {
+            return true;
+        }
+    
+        // Jika API tidak sukses, log pesan error
+        log_message('error', "WhatsApp API Error: " . json_encode($result));
+        return false;
+    }
+	
+	public function kirim_surat($id)
+	{
+		$this->load->model('M_new_surat');
+		$surat = $this->M_new_surat->get_by_id_alias($id);
+		if (!$surat) {
+			$this->session->set_flashdata('error', 'Surat tidak ditemukan.');
+			redirect('admin/buatsurat/list');
+			return;
+		}
+
+		$warga = $this->db->get_where('anggota_keluarga', ['nik' => $surat['nik']])->row();
+		$template = $this->db->get_where('template_surat', ['id' => $surat['template_id']])->row();
+		$desa = $this->Model_warga->get_nama_desa();
+		$link_pdf = base_url($surat['file']);
+
+		// Format pesan WhatsApp
+		$pesan = "Hallo, *{$warga->nama_lengkap}*\n\n" .
+				"No Pengajuan : *{$surat['no_pengajuan']}*\n" .
+				"Pengajuan *{$template->tipe_surat}* siap diunduh:\n" .
+				"$link_pdf\n\n" .
+				"Link berlaku selama 24 jam.\n" .
+				"Link akan kadaluarsa pada : *" . date('d-M-Y H:i:s', strtotime('+24 hours')) . "*\n".
+				"Pastikan anda sudah mendownload file surat PDF.\n\n" .
+				"Terima kasih,\nStaff Pelayanan - " .
+				"Desa *{$desa->nama_desa}*";
+
+		// Kirim pesan ke WhatsApp
+		$this->kirim_whatsapp($surat['no_wa'], $pesan);
+
+		// Setelah berhasil mengirim, update status surat
+		$this->db->update('tb_new_surat', [
+			'status' => 'Selesai',
+			'tgl_update' => date('Y-m-d H:i:s'),
+			'expired_at' => date('Y-m-d H:i:s', strtotime('+24 hours'))
+		], ['id_alias' => $id]);
+
+		$this->session->set_flashdata('success', 'Surat berhasil dikirim.');
 		redirect('admin/buatsurat/list');
 	}
 }

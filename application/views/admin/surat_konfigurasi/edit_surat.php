@@ -1,6 +1,88 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/3.0.1/jspdf.umd.min.js"></script>
 
+<style>
+	#letter-preview {
+		width: 794px; /* 210mm in 96dpi */
+		min-height: 1123px; /* 297mm in 96dpi */
+		background: #fff;
+		/* padding: 50px; */
+		box-sizing: border-box;
+	}
+
+	/* Preview Content Styles */
+	.preview-header {
+		text-align: center;
+		border-bottom: 2px solid #333;
+		padding-bottom: 1rem;
+		margin-bottom: 2rem;
+	}
+
+	.preview-header.horizontal {
+		text-align: left;
+	}
+
+	.preview-header img {
+		max-height: 80px;
+		margin-bottom: 0.5rem;
+	}
+
+	.preview-header .header-content {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+	}
+
+	.preview-header .logo-left,
+	.preview-header .logo-right {
+		max-height: 80px;
+	}
+
+	.preview-header .logo-top,
+	.preview-header .logo-bottom {
+		display: block;
+		margin: 0 auto 0.5rem;
+	}
+
+	.preview-header .logo-bottom {
+		margin-top: 1rem;
+		margin-bottom: 0;
+	}
+
+	.preview-header h3 {
+		margin: 0;
+		font-weight: bold;
+		text-transform: uppercase;
+	}
+
+	.preview-header p {
+		margin: 0.25rem 0;
+		font-size: 0.9em;
+	}
+
+	.preview-content {
+		text-align: justify;
+	}
+
+	.preview-content .center {
+		text-align: center;
+	}
+
+	.preview-content .bold {
+		font-weight: bold;
+	}
+
+	.preview-content .underline {
+		text-decoration: underline;
+	}
+
+	.preview-content .tab {
+		display: inline-block;
+		width: 2rem;
+	}
+</style>
+
 <main id="main" class="main">
 	<div class="pagetitle">
 		<h1>Pengajuan Edit Surat</h1>
@@ -69,10 +151,10 @@
 					<!-- Preview -->
 					<div class="col-md-6">
 						<div class="position-sticky" style="top: 1rem;">
-							<div class="card shadow-sm">
+							<div class="card shadow-sm table-responsive">
 								<div class="card-body">
 									<h5 class="card-title">Preview Surat</h5>
-									<div id="letter-preview" class="border rounded p-3 text-muted small" style="min-height: 200px;">
+									<div id="letter-preview" class="p-3" style="min-height: 200px;">
 										<p class="text-center">Pilih template dan isi data untuk melihat preview.</p>
 									</div>
 								</div>
@@ -86,8 +168,7 @@
 	</section>
 </main>
 
-<!-- Pastikan JQuery dan komponen lainnya tersedia -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 <script>
 	const suratData = <?= json_encode($surat[0] ?? []) ?>;
 	const isiSurat = suratData.isi_surat ? JSON.parse(suratData.isi_surat) : {};
@@ -107,80 +188,63 @@
 		let selectedWarga = null;
 
 		async function downloadLetterAsPdf() {
-			const {
-				jsPDF
-			} = window.jspdf;
-			const doc = new jsPDF();
-
-			// Get the content from the letter preview div
+			const { jsPDF } = window.jspdf;
 			const content = document.getElementById("letter-preview");
-			html2canvas(content, {
-					scale: 2, // Increase scale for better quality PDF
-				})
-				.then((canvas) => {
-					const imgData = canvas.toDataURL("image/png");
-					const imgWidth = 210; // A4 width in mm
-					const pageHeight = 297; // A4 height in mm
-					const imgHeight =
-						(canvas.height * imgWidth) / canvas.width;
-					let heightLeft = imgHeight;
 
-					let position = 0;
+			if (!content) {
+				console.error('letter-preview element not found');
+				return;
+			}
 
-					doc.addImage(
-						imgData,
-						"PNG",
-						0,
-						position,
-						imgWidth,
-						imgHeight
-					);
-					heightLeft -= pageHeight;
-
-					while (heightLeft >= 0) {
-						position = heightLeft - imgHeight;
-						doc.addPage();
-						doc.addImage(
-							imgData,
-							"PNG",
-							0,
-							position,
-							imgWidth,
-							imgHeight
-						);
-						heightLeft -= pageHeight;
-					}
-
-					// Save the PDF
-					const rawTitle = $templateSelect
-						.find("option:selected")
-						.text()
-						.trim();
-					const titleCase = rawTitle
-						.toLowerCase()
-						.split(/\s+/)
-						.map(
-							(word) =>
-							word.charAt(0).toUpperCase() +
-							word.slice(1)
-						)
-						.join(" ");
-
-					const dateStr = new Date()
-						.toISOString()
-						.slice(0, 10);
-					const filename = `${titleCase} ${dateStr}.pdf`;
-
-					doc.save(filename);
-				})
-				.catch((error) => {
-					console.error("Error generating PDF:", error);
-					Swal.fire({
-						icon: 'error',
-						title: 'Gagal',
-						text: 'Terjadi kesalahan saat membuat PDF. Silakan coba lagi.',
-					});
+			try {
+				// Render canvas dengan kualitas tinggi
+				const canvas = await html2canvas(content, {
+					scale: 3,
+					useCORS: true,
+					scrollY: 0
 				});
+
+				const imgData = canvas.toDataURL("image/jpeg", 1.0);
+
+				// Ukuran halaman PDF (A4: 210mm x 297mm)
+				const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+				const pdfWidth = pdf.internal.pageSize.getWidth();
+				const pdfHeight = pdf.internal.pageSize.getHeight();
+
+				// Ukuran gambar dari canvas
+				const imgWidth = pdfWidth;
+				const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+				// Jika gambar lebih tinggi dari 1 halaman A4, skalakan ke tinggi halaman A4
+				let finalWidth = imgWidth;
+				let finalHeight = imgHeight;
+				let yOffset = 0;
+
+				if (imgHeight > pdfHeight) {
+					finalHeight = pdfHeight;
+					finalWidth = (canvas.width * finalHeight) / canvas.height;
+					yOffset = (pdfWidth - finalWidth) / 2; // center secara horizontal
+				} else {
+					yOffset = (pdfHeight - imgHeight) / 2; // center secara vertical
+				}
+
+				pdf.addImage(imgData, 'JPEG', yOffset, 0, finalWidth, finalHeight);
+
+				// Nama file dari judul template
+				const rawTitle = $templateSelect.find("option:selected").text().trim();
+				const titleCase = rawTitle.toLowerCase().split(/\s+/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+				const dateStr = new Date().toISOString().slice(0, 10);
+				const filename = `${titleCase} ${dateStr}.pdf`;
+
+				pdf.save(filename);
+			} catch (error) {
+				console.error("Error generating PDF:", error);
+				Swal.fire({
+					icon: 'error',
+					title: 'Gagal',
+					text: 'Terjadi kesalahan saat membuat PDF. Silakan coba lagi.',
+				});
+			}
 		}
 
 		function fetchTemplates() {
@@ -229,7 +293,8 @@
 				method: 'GET',
 				dataType: 'json',
 				success: function(response) {
-					if (!response || !response.warga) {
+					
+					if (response.status != 'success') {
 						Swal.fire({
 							icon: 'error',
 							title: 'Gagal',
@@ -255,7 +320,7 @@
 					}
 				},
 				error: function(err) {
-					console.error('Gagal memuat data warga.', err);
+					console.error('Gagal memuat data warga.', err.responseText);
 					Swal.fire({
 						icon: 'error',
 						title: 'Gagal',
@@ -325,7 +390,69 @@
 			const tmpl = templates.find(t => t.id == selId);
 			if (!tmpl) return;
 
-			let content = tmpl.content_template;
+			let content = '';
+
+			// HEADER
+			if (tmpl.use_header) {
+				const { logoPosition = tmpl.header_logo_position, namaTemplate = tmpl.name, headerAlamat = tmpl.header_alamat, headerContent = tmpl.header_content, previewLogoData = tmpl.header_logo } = tmpl;
+				
+				const BASE_URL = "<?= base_url() ?>";
+				const logoHTML = previewLogoData
+					? `<img src="${BASE_URL}${previewLogoData}" alt="Logo" class="logo-${logoPosition}">`
+					: '';
+
+				const isHorizontal = ['left', 'right'].includes(logoPosition);
+				const headerClass = `preview-header ${isHorizontal ? 'horizontal' : ''}`;
+
+				let headerInner = '';
+
+				if (logoPosition === 'top') headerInner += `${logoHTML}`;
+				headerInner += `<div class="header-content">`;
+
+				if (logoPosition === 'left') headerInner += `${logoHTML}`;
+				headerInner += `<div><h3>${namaTemplate}</h3>`;
+				if (headerAlamat) headerInner += `<p>${headerAlamat}</p>`;
+				if (headerContent) headerInner += `<p>${headerContent}</p>`;
+				headerInner += `</div>`;
+				if (logoPosition === 'right') headerInner += `${logoHTML}`;
+
+				headerInner += `</div>`;
+				if (logoPosition === 'bottom') headerInner += `${logoHTML}`;
+
+				content += `<div class="${headerClass}">${headerInner}</div>`;
+			}
+
+			// ISI UTAMA
+			content += `<div class="preview-content">`;
+			// Add main content
+			content += tmpl.content_template
+				// Text formatting
+				.replace(/\[bold\](.*?)\[\/bold\]/gis, '<strong>$1</strong>')
+				.replace(/\[underline\](.*?)\[\/underline\]/gis, '<u>$1</u>')
+				.replace(/\[italic\](.*?)\[\/italic\]/gis, '<em>$1</em>')
+
+				// Alignment
+				.replace(/\[center\](.*?)\[\/center\]/gis, '<div class="text-center">$1</div>')
+				.replace(/\[right\](.*?)\[\/right\]/gis, '<div class="text-end">$1</div>')
+				.replace(/\[left\](.*?)\[\/left\]/gis, '<div class="text-start">$1</div>')
+				.replace(/\[justify\](.*?)\[\/justify\]/gis, '<div class="text-justify">$1</div>')
+
+				// Line breaks
+				.replace(/\[br\]/g, '<br>')
+
+				// Table structure
+				.replace(/(:)?\s*\[table\]/g, '<table>') // break line before table
+				.replace(/\[\/table\]/g, '</table>')
+				.replace(/\[tr\]/g, '<tr>')
+				.replace(/\[\/tr\]/g, '</tr>')
+				.replace(/\[td\]/g, '<td style="padding:4px 6px; vertical-align: top;">')
+				.replace(/\[\/td\]/g, '</td>')
+
+				// Tabs (optional, only if outside table)
+				.replace(/\[tab\]/g, '&emsp;');
+			// content += processedContent || `<p class="text-muted text-center">Mulai mengetik untuk melihat preview...</p>`;
+			content += `</div>`;
+
 			const variables = [...new Set(content.match(/{{\s*([\w\s_]+)\s*}}/g))];
 
 			if (variables) {
@@ -363,7 +490,7 @@
 				});
 			}
 
-			$preview.html(`<div style="font-family:'Courier New', monospace; line-height: 1.5; font-weight: bold;">${content}</div>`);
+			$preview.html(`<div style="font-family:'Times New Roman', serif; line-height: 1.5; font-weight: bold;">${content}</div>`);
 		}
 
 		$templateSelect.change(function() {
@@ -558,78 +685,51 @@
 			} = window.jspdf;
 			const doc = new jsPDF();
 			const content = document.getElementById("letter-preview");
+			const formData = new FormData();
 
 			try {
 				const canvas = await html2canvas(content, {
-					scale: 2
+					scale: 3,
+					useCORS: true,
+					scrollY: 0
 				});
-				const imgData = canvas.toDataURL("image/png");
-				const imgWidth = 210; // A4 in mm
-				const pageHeight = 297;
+
+				const imgData = canvas.toDataURL("image/jpeg", 1.0);
+
+				const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+				const pdfWidth = pdf.internal.pageSize.getWidth();
+				const pdfHeight = pdf.internal.pageSize.getHeight();
+
+				const imgWidth = pdfWidth;
 				const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-				let heightLeft = imgHeight;
-				let position = 0;
+				let finalWidth = imgWidth;
+				let finalHeight = imgHeight;
+				let xOffset = 0;
+				let yOffset = 0;
 
-				doc.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-				heightLeft -= pageHeight;
-
-				while (heightLeft > 0) {
-					position = heightLeft - imgHeight;
-					doc.addPage();
-					doc.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-					heightLeft -= pageHeight;
+				if (imgHeight > pdfHeight) {
+					finalHeight = pdfHeight;
+					finalWidth = (canvas.width * finalHeight) / canvas.height;
+					xOffset = (pdfWidth - finalWidth) / 2;
+					yOffset = 0;
+				} else {
+					yOffset = (pdfHeight - imgHeight) / 2;
 				}
 
-				// Konversi PDF ke Blob dan buat File
-				const pdfBlob = doc.output("blob");
+				pdf.addImage(imgData, "JPEG", xOffset, yOffset, finalWidth, finalHeight);
+
+				const pdfBlob = pdf.output("blob");
 				const pdfFile = new File([pdfBlob], "surat_digital.pdf", {
 					type: "application/pdf"
 				});
 
 				// Siapkan FormData untuk AJAX
-				const formData = new FormData();
 				formData.append("nik", selectedWarga.nik);
 				formData.append("template_id", selId);
 				formData.append("no_wa", noWa);
 				formData.append("isi_surat", isiSurat);
 				formData.append("file", pdfFile);
-
-				// Lanjutkan proses AJAX jika diperlukan
-				$.ajax({
-					url: '<?= base_url('admin/buatsurat/update_surat/') ?>' + encodeURIComponent(suratData.id_alias),
-					type: "POST",
-					data: formData,
-					contentType: false,
-					processData: false,
-					success: function(res) {
-						if (res.success) {
-							Swal.fire({
-								icon: 'success',
-								title: 'Berhasil',
-								text: res.message || 'Surat berhasil diperbarui.',
-							}).then((result) => {
-								if (result.isConfirmed) {
-									window.location.href = '<?= base_url('admin/buatsurat/list') ?>';
-								}
-							});
-						} else {
-							Swal.fire({
-								icon: 'error',
-								title: 'Gagal',
-								text: res.message || 'Terjadi kesalahan saat menyimpan surat.',
-							});
-						}
-					},
-					error: function(xhr, status, err) {
-						console.error("Upload gagal:", err);
-						Swal.fire({
-							icon: 'error',
-							title: 'Gagal',
-							text: 'Terjadi kesalahan saat mengirim data. Silakan coba lagi.',
-						});
-					},
-				});
 
 			} catch (err) {
 				console.error("Gagal menghasilkan PDF:", err);
@@ -639,6 +739,42 @@
 					text: 'Terjadi kesalahan saat membuat PDF. Silakan coba lagi.',
 				});
 			}
+
+			// Lanjutkan proses AJAX jika diperlukan
+			$.ajax({
+				url: '<?= base_url('admin/buatsurat/update_surat/') ?>' + encodeURIComponent(suratData.id_alias),
+				type: "POST",
+				data: formData,
+				contentType: false,
+				processData: false,
+				success: function(res) {
+					if (res.success) {
+						Swal.fire({
+							icon: 'success',
+							title: 'Berhasil',
+							text: res.message || 'Surat berhasil diperbarui.',
+						}).then((result) => {
+							if (result.isConfirmed) {
+								window.location.href = '<?= base_url('admin/buatsurat/list') ?>';
+							}
+						});
+					} else {
+						Swal.fire({
+							icon: 'error',
+							title: 'Gagal',
+							text: res.message || 'Terjadi kesalahan saat menyimpan surat.',
+						});
+					}
+				},
+				error: function(xhr, status, err) {
+					console.error("Upload gagal:", err);
+					Swal.fire({
+						icon: 'error',
+						title: 'Gagal',
+						text: 'Terjadi kesalahan saat mengirim data. Silakan coba lagi.',
+					});
+				},
+			});
 		});
 
 		fetchDataWarga();
