@@ -195,7 +195,7 @@
                                 </div>
 
                                 <!-- Dynamic Fields Section -->
-                                <div class="mb-3">
+                                <!-- <div class="mb-3">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <h6 class="mb-0">Field Dinamis</h6>
                                         <button type="button" class="btn btn-sm btn-outline-primary" onclick="addField()">
@@ -203,7 +203,7 @@
                                         </button>
                                     </div>
                                     <div id="field-wrapper"></div>
-                                </div>
+                                </div> -->
                             </div>
 
                             <!-- Preview Section -->
@@ -566,7 +566,7 @@
         function resetModal() {
             document.getElementById('templateForm').reset();
             document.getElementById('templateId').value = '';
-            document.getElementById('field-wrapper').innerHTML = '';
+            // document.getElementById('field-wrapper').innerHTML = '';
             document.getElementById('headerSection').style.display = 'none';
             document.getElementById('current-logo').style.display = 'none';
             

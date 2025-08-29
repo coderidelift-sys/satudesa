@@ -438,7 +438,7 @@
 									</div>
 
 									<!-- Dynamic Fields Section -->
-									<div class="mb-3">
+									<!-- <div class="mb-3">
 										<div class="d-flex justify-content-between align-items-center mb-3">
 											<h6 class="mb-0 fw-bold">
 												<i class="bi bi-list-task"></i> Field Dinamis
@@ -448,7 +448,7 @@
 											</button>
 										</div>
 										<div id="field-wrapper"></div>
-									</div>
+									</div> -->
 								</div>
 							</div>
 
@@ -1189,7 +1189,7 @@
 				CKEDITOR.instances['konten'].setData('');
 			}
 
-			document.getElementById('field-wrapper').innerHTML = '';
+			// document.getElementById('field-wrapper').innerHTML = '';
 			document.getElementById('templateId').value = '';
 			document.getElementById('headerSection').style.display = 'none';
 			document.getElementById('useHeaderCheck').checked = false;
